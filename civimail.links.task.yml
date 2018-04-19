@@ -3,3 +3,9 @@ entity.node.civimail:
   base_route: entity.node.canonical
   title: 'CiviMail'
   weight: 99
+
+entity.node_type.civimail:
+  route_name: entity.node_type.civimail
+  base_route: entity.node_type.edit_form
+  title: 'CiviMail'
+  weight: 99

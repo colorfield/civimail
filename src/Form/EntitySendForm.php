@@ -61,8 +61,9 @@ class EntitySendForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $node_type = NULL) {
-    // @todo check for CiviCRM Contact and Groups entities
+    // @todo check if CiviCRM Contact and Groups entities are available
     // @todo add filter
+    // @todo set default contact
     $form['from_contact'] = [
       '#type' => 'entity_autocomplete',
       '#title' => $this->t('From'),
@@ -91,7 +92,7 @@ class EntitySendForm extends FormBase {
         ],
       ],
     ];
-    // @todo filter
+    // @todo filter by groups that are configured for this content type
     $form['to_groups'] = [
       '#type' => 'select',
       '#title' => t('Groups'),

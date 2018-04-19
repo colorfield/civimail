@@ -100,8 +100,8 @@ class CiviMail implements CiviMailInterface {
    */
   private function getMailingBodyHtml(ContentEntityInterface $entity) {
     $viewBuilder = $this->entityTypeManager->getViewBuilder($entity->getEntityTypeId());
-    // @todo view mode from bundle config
-    $view = $viewBuilder->view($entity, 'default');
+    $viewMode = civimail_get_entity_bundle_settings('view_mode', $entity->getEntityTypeId(), $entity->bundle());
+    $view = $viewBuilder->view($entity, $viewMode);
     return \Drupal::service('renderer')->renderRoot($view);
   }
 
