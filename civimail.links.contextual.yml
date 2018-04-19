@@ -2,3 +2,8 @@ entity.node.civimail:
   route_name: entity.node.civimail
   group: node
   title: 'CiviMail'
+
+entity.node_type.civimail:
+  route_name: entity.node_type.civimail
+  group: node
+  title: 'CiviMail'

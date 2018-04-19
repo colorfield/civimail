@@ -122,7 +122,7 @@ class CiviMail implements CiviMailInterface {
   /**
    * {@inheritdoc}
    */
-  public function sendMailing($params) {
+  public function sendMailing(array $params) {
     $result = FALSE;
     $mailingResult = $this->civicrmEntityApi->save('Mailing', $params);
     // @todo review casting

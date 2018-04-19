@@ -67,3 +67,82 @@ function template_preprocess_entity_mailing(array &$variables) {
     $variables['content'][$key] = $variables['elements'][$key];
   }
 }
+
+/**
+ * Return civimail's settings for an entity type bundle.
+ *
+ * @param string $setting
+ *   One of the civimail_available_entity_bundle_settings(), e.g. 'groups'.
+ *   If 'all' is passed, all available settings are returned.
+ * @param string $entity_type_id
+ *   The id of the entity type to return settings for.
+ * @param string $bundle
+ *   The id of the bundle to return settings for.
+ *
+ * @return string|array
+ *   The value of the given setting or an array of all settings.
+ */
+function civimail_get_entity_bundle_settings($setting, $entity_type_id, $bundle) {
+  $config = \Drupal::configFactory()->getEditable('civimail.settings');
+  $settings = unserialize($config->get('civimail_bundle.' . $entity_type_id . '.' . $bundle));
+  if (empty($settings)) {
+    $settings = [];
+  }
+  $settings += message_group_notify_get_setting_defaults($type_name);
+
+  if ($setting == 'all') {
+    return $settings;
+  }
+
+  return isset($settings[$setting]) ? $settings[$setting] : NULL;
+}
+
+/**
+ * Save civimail settings of an entity type bundle.
+ *
+ * @param array $settings
+ *   The civimail_available_entity_bundle_settings().
+ * @param string $entity_type_id
+ *   The id of the entity type to set the settings for.
+ * @param string $bundle
+ *   The id of the bundle to set the settings for.
+ */
+function civimail_set_entity_bundle_settings(array $settings, $entity_type_id, $bundle) {
+  $config = \Drupal::configFactory()->getEditable('civimail.settings');
+  // Do not store default values.
+  foreach (civimail_get_entity_bundle_setting_defaults() as $setting => $default_value) {
+    if (isset($settings[$setting]) && $settings[$setting] == $default_value) {
+      unset($settings[$setting]);
+    }
+  }
+  $config->set('civimail_bundle.' . $entity_type_id . '.' . $bundle, serialize($settings));
+  $config->save();
+}
+
+/**
+ * Returns civimail entity type bundle available settings.
+ *
+ * @return array
+ *   List of entity bundle available settings.
+ */
+function civimail_available_entity_bundle_settings() {
+  return [
+    'enabled',
+    'groups',
+    'view_mode',
+  ];
+}
+
+/**
+ * Defines default values for civimail settings.
+ *
+ * @return array
+ *   List of entity bundle default settings.
+ */
+function civimail_get_entity_bundle_setting_defaults() {
+  $defaults = [];
+  $defaults['enabled'] = FALSE;
+  $defaults['groups'] = [];
+  $defaults['view_mode'] = 'default';
+  return $defaults;
+}
