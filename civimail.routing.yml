@@ -1,0 +1,12 @@
+entity.node.civimail:
+ path: '/node/{node}/civimail'
+ defaults:
+   _controller: '\Drupal\civimail\Controller\NodeController::mailing'
+   _title: 'Send node to CiviCRM groups'
+ requirements:
+   # @todo
+   #_civimail_node_page_access: 'TRUE'
+   _permission: 'use civimail'
+ options:
+   _node_operation_route: TRUE
+   _admin_route: TRUE

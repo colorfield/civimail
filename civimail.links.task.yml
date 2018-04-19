@@ -1,0 +1,5 @@
+entity.node.civimail:
+  route_name: entity.node.civimail
+  base_route: entity.node.canonical
+  title: 'CiviMail'
+  weight: 99

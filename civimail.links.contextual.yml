@@ -1,0 +1,4 @@
+entity.node.civimail:
+  route_name: entity.node.civimail
+  group: node
+  title: 'CiviMail'

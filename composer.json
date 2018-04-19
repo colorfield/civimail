@@ -1,0 +1,20 @@
+{
+  "name": "drupal/civimail",
+  "type": "drupal-module",
+  "description": "Integration with CiviCRM CiviMail",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/civimail",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/civimail",
+    "source": "http://cgit.drupalcode.org/civimail"
+  },
+  "require": {
+    "drupal/core": "~8.5",
+    "drupal/civicrm_entity": "3.x-dev"
+  },
+  "suggest": {
+    "drupal/message_group_notify": "for integration with the Message stack"
+  }
+}
