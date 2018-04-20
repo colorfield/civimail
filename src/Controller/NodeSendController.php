@@ -13,7 +13,7 @@ use Drupal\Core\Entity\EntityTypeManager;
 /**
  * Class NodeController.
  */
-class NodeController extends ControllerBase {
+class NodeSendController extends ControllerBase {
 
   /**
    * Drupal\Core\Entity\EntityTypeManager definition.
@@ -107,7 +107,7 @@ class NodeController extends ControllerBase {
     $groupLabels = [];
     foreach ($groups as $groupId => $group) {
       if (in_array($groupId, $mailing['groups'])) {
-        $groupLabels[] = $group->label();
+        $groupLabels[] = $group->get('title')->value;
       }
     }
     return [

@@ -162,7 +162,15 @@ class CiviMail implements CiviMailInterface {
     $viewBuilder = $this->entityTypeManager->getViewBuilder($entity->getEntityTypeId());
     $viewMode = civimail_get_entity_bundle_settings('view_mode', $entity->getEntityTypeId(), $entity->bundle());
     $view = $viewBuilder->view($entity, $viewMode);
-    return \Drupal::service('renderer')->renderRoot($view);
+    $renderedView = \Drupal::service('renderer')->renderRoot($view);
+    // Absolutize first then shorten urls.
+    $absoluteUrls = $this->absolutizeUrls($renderedView);
+    $shortenUrls = $this->shortenUrls($absoluteUrls);
+    $build = [
+      '#type' => 'markup',
+      '#markup' => $shortenUrls,
+    ];
+    return \Drupal::service('renderer')->renderRoot($build);
   }
 
   /**
@@ -175,8 +183,55 @@ class CiviMail implements CiviMailInterface {
    *   Markup of the entity view mode.
    */
   private function getMailingBodyText(ContentEntityInterface $entity) {
-    // @todo implement
+    // @todo implement, review Mime Mail helpers
+    // Absolutize first then shorten.
+    // $result = $this->absolutizeUrls($result);
+    // $result = $this->shortenUrls($result);
     return 'Plain text mail not implemented yet';
+  }
+
+  /**
+   * Replaces a text with relative urls by absolute ones.
+   *
+   * The match is done with urls starting with a slash.
+   *
+   * @param string $text
+   *   Text that contains relative urls.
+   *
+   * @return string
+   *   Text replaced with absolute urls.
+   */
+  private function absolutizeUrls($text) {
+    // @todo review possible security issue.
+    $baseUrl = \Drupal::request()->getSchemeAndHttpHost();
+    // Cover multi-site or public files configuration override.
+    // @todo review private files and other possible cases.
+    if ($wrapper = \Drupal::service('stream_wrapper_manager')->getViaUri('public://')) {
+      $publicDirectory = $wrapper->getDirectoryPath();
+      $publicFilesBaseUrl = $wrapper->getExternalUrl();
+    }
+    $result = str_replace(
+      ['href="/', 'src="/' . $publicDirectory],
+      ['href="' . $baseUrl . '/', 'src="' . $publicFilesBaseUrl . '/'],
+      $text
+    );
+    return $result;
+  }
+
+  /**
+   * Shortens urls to comply with 128 chars CiviCRM database limit.
+   *
+   * This is necessary while using the click tracking, enabled by default.
+   *
+   * @param string $text
+   *   Text that contains absolute urls.
+   *
+   * @return string
+   *   Text replaced with shortened urls.
+   */
+  private function shortenUrls($text) {
+    // @todo implement
+    return $text;
   }
 
   /**
@@ -310,7 +365,7 @@ class CiviMail implements CiviMailInterface {
     // currently delegating it to Drupal mail.
     if (!\Drupal::moduleHandler()->moduleExists('mimemail')) {
       // And ideally tests should not be done by Mime Mail
-      // but straight from CiviMail.
+      // but straight from CiviMail. CiviCRM tokens will not be available.
       $this->messenger->addWarning(t('You can improve HTML mail tests by installing the Mime Mail module.'));
     }
     // The subject in an email can't be with HTML, so strip it.
@@ -378,7 +433,9 @@ class CiviMail implements CiviMailInterface {
       $civicrmStorage = \Drupal::entityTypeManager()->getStorage('civicrm_group');
       $groups = $civicrmStorage->loadByProperties(['id' => 'civicrm_group']);
       foreach ($groups as $id => $group) {
-        $result[$id] = $group->label();
+        // Name seems to be used, getting title
+        // $result[$id] = $group->label();
+        $result[$id] = $group->get('title')->value;
       }
     }
     catch (InvalidPluginDefinitionException $exception) {

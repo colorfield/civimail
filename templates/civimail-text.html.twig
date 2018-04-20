@@ -12,7 +12,7 @@
 {% trans %}View it online {{ absolute_url }}{% endtrans %}
 
 {% if translation_urls %}
-  {% trans %}View in other languages {{ translation_urls }}{% endtrans %}
+{% trans %}View in other languages {{ translation_urls }}{% endtrans %}
 {% endif %}
 
 {{ body }}
@@ -22,5 +22,5 @@
 {% endif %}
 
 {% if civicrm_unsubscribe_url %}
- {% trans %}Unsubscribe {{ civicrm_unsubscribe_url }}{% endtrans %}
+{% trans %}Unsubscribe {{ civicrm_unsubscribe_url }}{% endtrans %}
 {% endif %}

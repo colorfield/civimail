@@ -16,6 +16,7 @@
   },
   "suggest": {
     "drupal/mimemail": "for integration with Mime Mail",
+    "drupal/chosen": "for integration with Chosen",
     "drupal/message_group_notify": "for integration with the Message stack"
   }
 }
