@@ -5,6 +5,7 @@ namespace Drupal\civimail;
 use Drupal\civicrm_entity\CiviCrmApiInterface;
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Link;
@@ -375,6 +376,45 @@ class CiviMail implements CiviMailInterface {
     }
     catch (InvalidPluginDefinitionException $exception) {
       $this->messenger->addError($exception->getMessage());
+    }
+    return $result;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hasCiviCrmRequirements() {
+    $result = TRUE;
+    // Check if CiviCRM Entity module is installed.
+    if (\Drupal::moduleHandler()->moduleExists('civicrm_entity')) {
+      // Check if the CiviCRM Group and Contact entities are enabled.
+      $civicrmEnabledEntities = array_filter(
+        $this->entityTypeManager->getDefinitions(),
+        function (EntityTypeInterface $type) {
+          return $type->getProvider() == 'civicrm_entity' && $type->get('civicrm_entity_ui_exposed');
+        }
+      );
+      if (!array_key_exists('civicrm_group', $civicrmEnabledEntities)) {
+        $result = FALSE;
+      }
+      if (!array_key_exists('civicrm_contact', $civicrmEnabledEntities)) {
+        $result = FALSE;
+      }
+      if (!$result) {
+        $civicrmEntityUrl = Url::fromRoute('civicrm_entity.settings', [], [
+          'query' => ['destination' => \Drupal::request()->getRequestUri()],
+        ]);
+        $civicrmEntityLink = Link::fromTextAndUrl(t('CiviCRM Group and Contact entities'), $civicrmEntityUrl);
+        $civicrmEntityLink = $civicrmEntityLink->toRenderable();
+        $this->messenger->addError(t('@civicrm_entity_link must be enabled.', [
+          '@civicrm_entity_link' => render($civicrmEntityLink),
+          '@group_types_link' => render($groupTypesLink),
+        ]));
+      }
+    }
+    else {
+      $result = FALSE;
+      $this->messenger->addError(t('CiviCRM Entity module is not installed.'));
     }
     return $result;
   }

@@ -104,4 +104,12 @@ interface CiviMailInterface {
    */
   public function getContactEntitiesLabel();
 
+  /**
+   * Indicates if CiviCRM requirements are fulfilled.
+   *
+   * @return bool
+   *   The status of the requirements.
+   */
+  public function hasCiviCrmRequirements();
+
 }

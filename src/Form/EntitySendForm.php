@@ -61,60 +61,60 @@ class EntitySendForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $node_type = NULL) {
-    // @todo check if CiviCRM Contact and Groups entities are available
-    // @todo add filter
-    // @todo add default contact
-    $form['from_contact'] = [
-      '#type' => 'entity_autocomplete',
-      '#title' => $this->t('From'),
-      '#description' => $this->t('The sender CiviCRM contact.'),
-      '#target_type' => 'civicrm_contact',
-      '#required' => TRUE,
-    ];
-    $form['test_mode'] = [
-      '#type' => 'checkbox',
-      '#title' => t('Send a test'),
-    ];
-    $form['test_mail'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Test email'),
-      '#description' => $this->t('The email address that will receive the test.'),
-      '#maxlength' => 254,
-      '#size' => 64,
-      '#default_value' => \Drupal::config('system.site')->get('mail'),
-      '#states' => [
-        'visible' => [
-          ':input[name="test_mode"]' => ['checked' => TRUE],
+    if ($this->civiMail->hasCiviCrmRequirements()) {
+      // @todo add filter
+      // @todo add default contact
+      $form['from_contact'] = [
+        '#type' => 'entity_autocomplete',
+        '#title' => $this->t('From'),
+        '#description' => $this->t('The sender CiviCRM contact.'),
+        '#target_type' => 'civicrm_contact',
+        '#required' => TRUE,
+      ];
+      $form['test_mode'] = [
+        '#type' => 'checkbox',
+        '#title' => t('Send a test'),
+      ];
+      $form['test_mail'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Test email'),
+        '#description' => $this->t('The email address that will receive the test.'),
+        '#maxlength' => 254,
+        '#size' => 64,
+        '#default_value' => \Drupal::config('system.site')->get('mail'),
+        '#states' => [
+          'visible' => [
+            ':input[name="test_mode"]' => ['checked' => TRUE],
+          ],
+          'required' => [
+            ':input[name="test_mode"]' => ['checked' => TRUE],
+          ],
         ],
-        'required' => [
-          ':input[name="test_mode"]' => ['checked' => TRUE],
+      ];
+      // @todo filter by groups that are configured for this content type
+      $form['to_groups'] = [
+        '#type' => 'select',
+        '#title' => t('Groups'),
+        '#options' => $this->civiMail->getGroupEntitiesLabel(),
+        '#multiple' => TRUE,
+        '#limit_validation_errors' => ['submit'],
+        '#states' => [
+          'visible' => [
+            ':input[name="test_mode"]' => ['checked' => FALSE],
+          ],
+          'required' => [
+            ':input[name="test_mode"]' => ['checked' => FALSE],
+          ],
         ],
-      ],
-    ];
-    // @todo filter by groups that are configured for this content type
-    $form['to_groups'] = [
-      '#type' => 'select',
-      '#title' => t('Groups'),
-      '#options' => $this->civiMail->getGroupEntitiesLabel(),
-      '#multiple' => TRUE,
-      '#limit_validation_errors' => ['submit'],
-      '#states' => [
-        'visible' => [
-          ':input[name="test_mode"]' => ['checked' => FALSE],
-        ],
-        'required' => [
-          ':input[name="test_mode"]' => ['checked' => FALSE],
-        ],
-      ],
-    ];
+      ];
 
-    $form['actions']['#type'] = 'actions';
-    $form['actions']['submit'] = [
-      '#type' => 'submit',
-      '#value' => t('Send'),
-      '#button_type' => 'primary',
-    ];
-
+      $form['actions']['#type'] = 'actions';
+      $form['actions']['submit'] = [
+        '#type' => 'submit',
+        '#value' => t('Send'),
+        '#button_type' => 'primary',
+      ];
+    }
     return $form;
   }
 
