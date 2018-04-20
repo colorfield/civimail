@@ -60,6 +60,7 @@ class NodeTypeSettingsForm extends FormBase {
 
     // @todo review the following options
     // - default contact
+    // - filter sender contacts
     // - use CiviMail header and footer
     // - use mail template
     // - show translation urls if any

@@ -15,6 +15,7 @@
     "drupal/civicrm_entity": "3.x-dev"
   },
   "suggest": {
+    "drupal/mimemail": "for integration with Mime Mail",
     "drupal/message_group_notify": "for integration with the Message stack"
   }
 }

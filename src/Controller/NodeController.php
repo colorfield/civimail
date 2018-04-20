@@ -63,11 +63,11 @@ class NodeController extends ControllerBase {
   private function buildHeader() {
     $header = [
       'mailing_id' => [
-        'data' => $this->t('ID'),
+        'data' => $this->t('Mailing Id'),
         'class' => [RESPONSIVE_PRIORITY_LOW],
       ],
       'subject' => [
-        'data' => $this->t('Mail subject'),
+        'data' => $this->t('Subject'),
         'class' => [RESPONSIVE_PRIORITY_MEDIUM],
       ],
       'from' => [

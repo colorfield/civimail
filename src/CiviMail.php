@@ -175,6 +175,7 @@ class CiviMail implements CiviMailInterface {
    *   Markup of the entity view mode.
    */
   private function getMailingBodyText(ContentEntityInterface $entity) {
+    // @todo implement
     return 'Plain text mail not implemented yet';
   }
 
@@ -249,11 +250,11 @@ class CiviMail implements CiviMailInterface {
       $insert->fields($fields);
       $insert->execute();
 
-      foreach ($groups as $groupsId) {
+      foreach ($groups as $groupId) {
         $insert = \Drupal::database()->insert('civimail_entity_mailing__group');
         $fields = [
           'civicrm_mailing_id' => (int) $mailing_result['id'],
-          'civicrm_group_id' => (int) $groupsId,
+          'civicrm_group_id' => (int) $groupId,
         ];
         $insert->fields($fields);
         $insert->execute();
@@ -305,9 +306,34 @@ class CiviMail implements CiviMailInterface {
    * {@inheritdoc}
    */
   public function sendTestMail($from_cid, ContentEntityInterface $entity, $to_mail) {
-    $result = FALSE;
-    // @todo implement
-    $this->messenger->addError(t('sendTestMail() method is not implemented yet.'));
+    // This should be available from the CiviCRM API,
+    // currently delegating it to Drupal mail.
+    if (!\Drupal::moduleHandler()->moduleExists('mimemail')) {
+      // And ideally tests should not be done by Mime Mail
+      // but straight from CiviMail.
+      $this->messenger->addWarning(t('You can improve HTML mail tests by installing the Mime Mail module.'));
+    }
+    // The subject in an email can't be with HTML, so strip it.
+    $params['subject'] = t('[ TEST ] @subject', ['@subject' => $entity->label()]);
+    // @todo get header and footer / get template from the bundle config
+    $params['body'] = $this->getMailingTemplateHtml($entity);
+    // Pass the message entity along to hook_drupal_mail().
+    $params['entity'] = $entity;
+
+    // Pass the relevant from contact data to hook_drupal_mail().
+    // Fallback to system defaults.
+    $fromContact = $this->getContact(['contact_id' => $from_cid]);
+    $systemConfig = \Drupal::configFactory()->get('system.site');
+    $params['from_mail'] = empty($fromContact['email']) ? $systemConfig->get('mail') : $fromContact['email'];
+    $params['from_name'] = empty($fromContact['display_name']) ? $systemConfig->get('name') : $fromContact['display_name'];
+
+    $result = \Drupal::service('plugin.manager.mail')->mail(
+      'civimail',
+      'entity_test_mail',
+      $to_mail,
+      $entity->language()->getId(),
+      $params
+    );
     return $result;
   }
 
