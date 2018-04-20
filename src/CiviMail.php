@@ -56,9 +56,9 @@ class CiviMail implements CiviMailInterface {
    * {@inheritdoc}
    */
   public function getEntityMailingParams($from_cid, ContentEntityInterface $entity, array $groups) {
-    // Contact entity does not return an email without relationships
-    // $this->civiMail->getContactEntity(4);.
-    $fromContactDetails = $this->getContact(['contact_id' => 4]);
+    // Contact (Drupal) entity does not return an email without relationships,
+    // so get the contact from the CiviCRM API.
+    $fromContactDetails = $this->getContact(['contact_id' => $from_cid]);
     $result = [
       'subject' => $entity->label(),
       'body_text' => $this->getMailingBodyText($entity),
@@ -122,21 +122,101 @@ class CiviMail implements CiviMailInterface {
   /**
    * {@inheritdoc}
    */
-  public function sendMailing(array $params) {
+  public function sendMailing(array $params, ContentEntityInterface $entity) {
     $result = FALSE;
     $mailingResult = $this->civicrmEntityApi->save('Mailing', $params);
-    // @todo review casting
-    if ($mailingResult['is_error'] == 0) {
+    if ($mailingResult['is_error'] === 0) {
       $result = TRUE;
       // $message = t('CiviMail mailing for @subject scheduled.',
       // ['@subject' => $result['values'][$result['id']]['subject'],]);.
       $message = t('CiviMail mailing for <em>@subject</em> scheduled.', ['@subject' => $params['subject']]);
       $this->messenger->addStatus($message);
+      // @todo review submit
+      // $result = civicrm_api3('Mailing', 'submit', $params);
       // @todo execute process_mailing job
+      $this->logMailing($mailingResult, $entity, $params['groups']['include']);
     }
     else {
-      // @todo get exception
+      // @todo get exception result
       $this->messenger->addError(t('Error while sending the mailing.'));
+    }
+    return $result;
+  }
+
+  /**
+   * Logs the relation between the CiviCRM mailing, groups and the entity.
+   *
+   * @param array $mailing_result
+   *   The CiviCRM mailing result.
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The content entity that is the subject of the mailing.
+   * @param array $groups
+   *   List of CiviCRM group ids for the mailing.
+   */
+  private function logMailing(array $mailing_result, ContentEntityInterface $entity, array $groups) {
+    $user = \Drupal::currentUser();
+    $fields = [
+      'entity_id' => (int) $entity->id(),
+      'entity_type_id' => (string) $entity->getEntityTypeId(),
+      'entity_bundle' => (string) $entity->bundle(),
+      'langcode' => (string) $entity->language()->getId(),
+      'uid' => (int) $user->id(),
+      'civicrm_mailing_id' => (int) $mailing_result['id'],
+      'timestamp' => \Drupal::time()->getRequestTime(),
+    ];
+    try {
+      $insert = \Drupal::database()->insert('civimail_entity_mailing');
+      $insert->fields($fields);
+      $insert->execute();
+
+      foreach ($groups as $groupsId) {
+        $insert = \Drupal::database()->insert('civimail_entity_mailing__group');
+        $fields = [
+          'civicrm_mailing_id' => (int) $mailing_result['id'],
+          'civicrm_group_id' => (int) $groupsId,
+        ];
+        $insert->fields($fields);
+        $insert->execute();
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('civimail')->error($e->getMessage());
+      \Drupal::messenger()->addError($e->getMessage());
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getEntityMailingHistory(ContentEntityInterface $entity) {
+    $result = [];
+    // @todo optimization is necessary here.
+    $query = \Drupal::database()->select('civimail_entity_mailing', 'logs');
+    $query->fields('logs', ['civicrm_mailing_id'])
+      ->condition('logs.entity_id', $entity->id())
+      ->condition('logs.entity_type_id', $entity->getEntityTypeId())
+      ->condition('logs.entity_bundle', $entity->bundle())
+      ->condition('logs.langcode', $entity->language()->getId());
+    $query->orderBy('logs.civicrm_mailing_id', 'DESC');
+    $logsResult = $query->execute()->fetchAll();
+    foreach ($logsResult as $row) {
+      // Get the details of the mailing.
+      $civiCrmMailing = $this->civicrmEntityApi->get('Mailing', ['id' => $row->civicrm_mailing_id]);
+      // There does not seem to be any api that gets mailing groups,
+      // an issue could be opened for that.
+      // A Drupal table currently stores the results.
+      $query = \Drupal::database()->select('civimail_entity_mailing__group', 'mailing_group');
+      $query->fields('mailing_group', ['civicrm_group_id'])
+        ->condition('mailing_group.civicrm_mailing_id', $row->civicrm_mailing_id);
+      $groupsResult = $query->execute()->fetchAll();
+      $rowResult = [];
+      $rowResult['mailing'] = $civiCrmMailing[$row->civicrm_mailing_id];
+      $rowResult['groups'] = [];
+      foreach ($groupsResult as $groupRow) {
+        $rowResult['groups'][] = $groupRow->civicrm_group_id;
+      }
+      // Wrap all together.
+      $result[$row->civicrm_mailing_id] = $rowResult;
     }
     return $result;
   }
@@ -212,27 +292,6 @@ class CiviMail implements CiviMailInterface {
       foreach ($contacts as $id => $contact) {
         // @todo cid
         $result[$id] = $contact->label();
-      }
-    }
-    catch (InvalidPluginDefinitionException $exception) {
-      $this->messenger->addError($exception->getMessage());
-    }
-    return $result;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getContactEntity($cid) {
-    $result = NULL;
-    try {
-      // @todo there must be another way to get a contact by its cid
-      $civicrmStorage = \Drupal::entityTypeManager()->getStorage('civicrm_contact');
-      $contacts = $civicrmStorage->loadByProperties(['id' => 'civicrm_contact']);
-      foreach ($contacts as $id => $contact) {
-        if ($id == $cid) {
-          $result = $contact;
-        }
       }
     }
     catch (InvalidPluginDefinitionException $exception) {

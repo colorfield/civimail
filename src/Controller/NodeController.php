@@ -6,7 +6,7 @@ use Drupal\civimail\Form\EntitySendForm;
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Datetime\DateFormatter;
-use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Datetime\DrupalDateTime;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Entity\EntityTypeManager;
 
@@ -55,21 +55,6 @@ class NodeController extends ControllerBase {
   }
 
   /**
-   * Loads mailings that have a node for reference.
-   *
-   * @param int $node_id
-   *   The node entity id.
-   *
-   * @return array
-   *   List of CiviCRM Mailings.
-   */
-  private function getMailings($node_id) {
-    $result = [];
-    // @todo implement
-    return $result;
-  }
-
-  /**
    * Builds a table header.
    *
    * @return array
@@ -77,95 +62,96 @@ class NodeController extends ControllerBase {
    */
   private function buildHeader() {
     $header = [
-      'display' => [
-        'data' => $this->t('Mail subject'),
-        'class' => [RESPONSIVE_PRIORITY_MEDIUM],
+      'mailing_id' => [
+        'data' => $this->t('ID'),
+        'class' => [RESPONSIVE_PRIORITY_LOW],
       ],
-      'groups' => [
-        'data' => $this->t('Groups'),
+      'subject' => [
+        'data' => $this->t('Mail subject'),
         'class' => [RESPONSIVE_PRIORITY_MEDIUM],
       ],
       'from' => [
         'data' => $this->t('From'),
-        'class' => [RESPONSIVE_PRIORITY_MEDIUM],
-      ],
-      'author' => [
-        'data' => $this->t('Author'),
         'class' => [RESPONSIVE_PRIORITY_LOW],
+      ],
+      'groups' => [
+        'data' => $this->t('Groups'),
+        'class' => [RESPONSIVE_PRIORITY_MEDIUM],
       ],
       'created' => [
         'data' => $this->t('Created'),
         'class' => [RESPONSIVE_PRIORITY_LOW],
       ],
     ];
-
-    // $this->storage->getEntityType()->isTranslatable() ?
-    if (\Drupal::languageManager()->isMultilingual()) {
-      $header['language_name'] = [
-        'data' => $this->t('Language'),
-        'class' => [RESPONSIVE_PRIORITY_LOW],
-      ];
-    }
     return $header;
   }
 
   /**
    * Builds a table row.
    *
-   * @param \Drupal\Core\Entity\EntityInterface $entity
-   *   Entity for this row.
+   * @param array $mailing
+   *   CiviCRM mailing details.
    *
    * @return array
    *   Array mapped to header.
    */
-  private function buildRow(EntityInterface $entity) {
+  private function buildRow(array $mailing) {
+    $dateTime = DrupalDateTime::createFromFormat(
+      'Y-m-d H:i:s',
+      $mailing['mailing']['created_date']
+    );
+    $timeStamp = $dateTime->getTimestamp();
+    // @todo waiting to see how evolves the CiviCRM entity to introduce filters in CiviMailInterface.
+    $civicrmStorage = \Drupal::entityTypeManager()->getStorage('civicrm_group');
+    $groups = $civicrmStorage->loadByProperties(['id' => 'civicrm_group']);
+    $groupLabels = [];
+    foreach ($groups as $groupId => $group) {
+      if (in_array($groupId, $mailing['groups'])) {
+        $groupLabels[] = $group->label();
+      }
+    }
     return [
-      'display' => '@todo',
-      'from' => '@todo',
-      'groups' => '@todo',
-      'author' => '@todo',
-      'created' => '@todo',
-      // 'created' => $this->dateFormatter->format
-      // ($entity->getCreatedTime(), 'short'),.
+      'mailing_id' => $mailing['mailing']['id'],
+      'subject' => $mailing['mailing']['subject'],
+    // @todo link with from_name
+      'from' => $mailing['mailing']['from_email'],
+      'groups' => implode(',', $groupLabels),
+      'created' => $this->dateFormatter->format($timeStamp, 'short'),
     ];
   }
 
   /**
    * Builds the mailing listing as a render array for table.html.twig.
    *
-   * @param array $mailings
+   * @param array $mailing_history
    *   List of CiviCRM mailings.
    *
    * @return array
    *   Table render array.
    */
-  public function renderTable(array $mailings) {
+  public function renderTable(array $mailing_history) {
     // @todo composition with entity list builder.
     $build['table'] = [
       '#type' => 'table',
       '#header' => $this->buildHeader(),
       '#title' => $this->t('CiviCRM mailings'),
       '#rows' => [],
-      '#empty' => $this->t('Mailings history not implemented yet.'),
       // @todo empty should contain a call to action.
-      // '#empty' => $this->t('There is no mailings sent yet.'),
+      '#empty' => $this->t('No mailing was sent yet for this content.'),
       // @todo
       // '#cache' => [
       // ],
     ];
-    foreach ($mailings as $mailing) {
+    foreach ($mailing_history as $mailing) {
       if ($row = $this->buildRow($mailing)) {
         $build['table']['#rows'][] = $row;
       }
     }
 
     // @todo pagination
-    // Only add the pager if a limit is specified.
-    // if ($this->limit) {
     // $build['pager'] = [
     // '#type' => 'pager',
     // ];
-    // }
     return $build;
   }
 
@@ -183,13 +169,14 @@ class NodeController extends ControllerBase {
     $build = [];
     try {
       $nodeEntity = $this->entityTypeManager->getStorage('node')->load($node);
-      $mailings = $this->getMailings($node);
+      $civiMail = \Drupal::service('civimail');
+      $mailingHistory = $civiMail->getEntityMailingHistory($nodeEntity);
       // @todo set render keys
       $build = [
         '#theme' => 'entity_mailing',
         '#entity' => $nodeEntity,
         '#entity_send_form' => \Drupal::formBuilder()->getForm(EntitySendForm::class),
-        '#sent_mailings' => $this->renderTable($mailings),
+        '#sent_mailings' => $this->renderTable($mailingHistory),
       ];
     }
     catch (InvalidPluginDefinitionException $exception) {

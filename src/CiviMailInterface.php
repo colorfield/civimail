@@ -15,7 +15,7 @@ interface CiviMailInterface {
    * @param int $from_cid
    *   The CiviCRM contact id for the mailing sender.
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
-   *   The content entity.
+   *   The content entity that is the subject of the mailing.
    * @param array $groups
    *   List of CiviCRM group id's.
    *
@@ -29,11 +29,13 @@ interface CiviMailInterface {
    *
    * @param array $params
    *   The mailing parameters.
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The content entity that is the subject of the mailing.
    *
    * @return bool
    *   The mailing status.
    */
-  public function sendMailing(array $params);
+  public function sendMailing(array $params, ContentEntityInterface $entity);
 
   /**
    * Sends a Drupal entity to a test address.
@@ -41,7 +43,7 @@ interface CiviMailInterface {
    * @param int $from_cid
    *   The CiviCRM contact id for the mailing sender.
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
-   *   The content entity.
+   *   The content entity that is the subject of the mailing.
    * @param string $to_mail
    *   The email address that will receive the test.
    *
@@ -49,6 +51,20 @@ interface CiviMailInterface {
    *   The test status.
    */
   public function sendTestMail($from_cid, ContentEntityInterface $entity, $to_mail);
+
+  /**
+   * Fetches the mailing history for an entity.
+   *
+   * Aggregates the results of the civimail_entity_mailing table
+   * and the CiviCRM Mailing API.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The content entity that is the subject of the mailing.
+   *
+   * @return array
+   *   List of CiviCRM mailing history for this entity.
+   */
+  public function getEntityMailingHistory(ContentEntityInterface $entity);
 
   /**
    * Fetches a single contact straight from the CiviCRM API.
@@ -87,16 +103,5 @@ interface CiviMailInterface {
    *   List of labels indexed by group id.
    */
   public function getContactEntitiesLabel();
-
-  /**
-   * Returns a single Drupal CiviCRM Contact entity.
-   *
-   * @param int $cid
-   *   The CiviCRM Contact id.
-   *
-   * @return \Drupal\civicrm_entity\Entity\CivicrmEntity
-   *   CiviCRM Contact Drupal entity
-   */
-  public function getContactEntity($cid);
 
 }

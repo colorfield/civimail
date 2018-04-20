@@ -59,12 +59,36 @@ function civimail_schema() {
         'default' => 0,
         'description' => 'The CiviCRM mailing id for this entity.',
       ],
+      'timestamp' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
     ],
     'primary key' => ['id'],
     'indexes' => [
       'entity_id' => ['entity_id'],
     ],
   ];
-
+  $schema['civimail_entity_mailing__group'] = [
+    'description' => 'Logs history of groups that were the subject of an entity mailing.',
+    'fields' => [
+      'civicrm_mailing_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The CiviCRM mailing id.',
+      ],
+      'civicrm_group_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The CiviCRM group id.',
+      ],
+    ],
+    'primary key' => ['civicrm_mailing_id', 'civicrm_group_id'],
+  ];
   return $schema;
 }

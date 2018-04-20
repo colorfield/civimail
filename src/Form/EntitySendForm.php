@@ -133,7 +133,7 @@ class EntitySendForm extends FormBase {
     else {
       $groups = $form_state->getValue('to_groups');
       $params = $this->civiMail->getEntityMailingParams($fromCid, $entity, $groups);
-      $mailingResult = $this->civiMail->sendMailing($params);
+      $mailingResult = $this->civiMail->sendMailing($params, $entity);
     }
   }
 
