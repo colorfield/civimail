@@ -63,7 +63,7 @@ class EntitySendForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state, $node_type = NULL) {
     // @todo check if CiviCRM Contact and Groups entities are available
     // @todo add filter
-    // @todo set default contact
+    // @todo add default contact
     $form['from_contact'] = [
       '#type' => 'entity_autocomplete',
       '#title' => $this->t('From'),
@@ -81,8 +81,7 @@ class EntitySendForm extends FormBase {
       '#description' => $this->t('The email address that will receive the test.'),
       '#maxlength' => 254,
       '#size' => 64,
-      // @todo add default
-      // '#default_value' => '',
+      '#default_value' => \Drupal::config('system.site')->get('mail'),
       '#states' => [
         'visible' => [
           ':input[name="test_mode"]' => ['checked' => TRUE],

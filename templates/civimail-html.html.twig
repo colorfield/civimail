@@ -1,0 +1,28 @@
+{#
+/**
+ * @file
+ * Default theme implementation for HTML mail.
+ * @todo documentation
+#}
+
+{% if civicrm_header %}
+   {{ civicrm_header }}
+{% endif %}
+
+{{ absolute_link }}
+
+{% if translation_links %}
+  {% trans %}View in other languages {{ translation_links }}{% endtrans %}
+{% endif %}
+
+{{ body }}
+
+{% if civicrm_footer %}
+  {{ civicrm_footer }}
+{% endif %}
+
+{% if civicrm_unsubscribe_url %}
+  {# CiviCRM token is not useable here #}
+  {#{{ link('Unsubscribe'|t, civicrm_unsubscribe_url, { 'class':['unsubscribe']} ) }}#}
+  <a href="{{ civicrm_unsubscribe_url }}" class="unsubscribe">{{ 'Unsubscribe'|t }}</a>
+{% endif %}

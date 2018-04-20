@@ -58,6 +58,11 @@ class NodeTypeSettingsForm extends FormBase {
     $entityDisplayRepository = \Drupal::service('entity_display.repository');
     $viewModes = $entityDisplayRepository->getViewModeOptions('node');
 
+    // @todo review the following options
+    // - default contact
+    // - use CiviMail header and footer
+    // - use mail template
+    // - show translation urls if any
     $form['enabled'] = [
       '#type' => 'checkbox',
       '#title' => t('Enable CiviMail for this content type'),

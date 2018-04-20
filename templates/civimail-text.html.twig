@@ -1,0 +1,26 @@
+{#
+/**
+ * @file
+ * Default theme implementation for HTML mail.
+ * @todo documentation
+#}
+
+{% if civicrm_header %}
+  {{ civicrm_header }}
+{% endif %}
+
+{% trans %}View it online {{ absolute_url }}{% endtrans %}
+
+{% if translation_urls %}
+  {% trans %}View in other languages {{ translation_urls }}{% endtrans %}
+{% endif %}
+
+{{ body }}
+
+{% if civicrm_footer %}
+  {{ civicrm_footer }}
+{% endif %}
+
+{% if civicrm_unsubscribe_url %}
+ {{ civicrm_unsubscribe_url }}
+{% endif %}

@@ -7,7 +7,9 @@ use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Core\Link;
 use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\Url;
 
 /**
  * Class CiviMail.
@@ -61,8 +63,11 @@ class CiviMail implements CiviMailInterface {
     $fromContactDetails = $this->getContact(['contact_id' => $from_cid]);
     $result = [
       'subject' => $entity->label(),
-      'body_text' => $this->getMailingBodyText($entity),
-      'body_html' => $this->getMailingBodyHtml($entity),
+      // @todo get header and footer / get template from the bundle config
+      'header_id' => '',
+      'footer_id' => '',
+      'body_text' => $this->getMailingTemplateText($entity),
+      'body_html' => $this->getMailingTemplateHtml($entity),
     // @todo mailing name in CiviCRM, must be max. 128 chars
       'name' => $entity->label(),
       'created_id' => $fromContactDetails['contact_id'],
@@ -90,6 +95,60 @@ class CiviMail implements CiviMailInterface {
   }
 
   /**
+   * Returns the markup for the mailing body wrapped in a mail template.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The content entity used for the body.
+   *
+   * @return string
+   *   Markup of the mail template.
+   */
+  private function getMailingTemplateHtml(ContentEntityInterface $entity) {
+    $link = Link::fromTextAndUrl(t('View it online'), $this->getAbsoluteEntityUrl($entity));
+    $link = $link->toRenderable();
+    $build = [
+      '#theme' => 'civimail_html',
+      '#entity' => $entity,
+      '#body' => $this->getMailingBodyHtml($entity),
+      '#absolute_link' => \Drupal::service('renderer')->renderRoot($link),
+    // @todo
+      '#translation_links' => NULL,
+    // @todo
+      '#civicrm_header' => NULL,
+    // @todo
+      '#civicrm_footer' => NULL,
+      '#civicrm_unsubscribe_url' => '{action.unsubscribeUrl}',
+    ];
+    return \Drupal::service('renderer')->renderRoot($build);
+  }
+
+  /**
+   * Returns the the mailing body as plain text wrapped in a mail template.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The content entity used for the body.
+   *
+   * @return string
+   *   Text of the mail template.
+   */
+  private function getMailingTemplateText(ContentEntityInterface $entity) {
+    $build = [
+      '#theme' => 'civimail_text',
+      '#entity' => $entity,
+      '#body' => $this->getMailingBodyText($entity),
+      '#absolute_url' => $this->getAbsoluteEntityUrl($entity)->toString(),
+    // @todo
+      '#translation_urls' => NULL,
+    // @todo
+      '#civicrm_header' => NULL,
+    // @todo
+      '#civicrm_footer' => NULL,
+      '#civicrm_unsubscribe_url' => '{action.unsubscribeUrl}',
+    ];
+    return \Drupal::service('renderer')->renderRoot($build);
+  }
+
+  /**
    * Returns the markup for the mailing body.
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
@@ -106,7 +165,7 @@ class CiviMail implements CiviMailInterface {
   }
 
   /**
-   * Returns the markup for the mailing body.
+   * Returns the mailing body as plain text.
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
    *   The content entity used for the body.
@@ -115,8 +174,27 @@ class CiviMail implements CiviMailInterface {
    *   Markup of the entity view mode.
    */
   private function getMailingBodyText(ContentEntityInterface $entity) {
-    // @todo implement
-    return 'Text not implemented yet';
+    return 'Plain text mail not implemented yet';
+  }
+
+  /**
+   * Returns an absolute Url to an entity.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The content entity to get the Url from.
+   *
+   * @return \Drupal\Core\Url
+   *   The absolute Url to the entity.
+   */
+  private function getAbsoluteEntityUrl(ContentEntityInterface $entity) {
+    // @todo cover other entity types.
+    $result = NULL;
+    switch ($entity->getEntityTypeId()) {
+      case 'node':
+        $result = Url::fromRoute('entity.node.canonical', ['node' => $entity->id()])->setAbsolute();
+        break;
+    }
+    return $result;
   }
 
   /**
@@ -133,7 +211,8 @@ class CiviMail implements CiviMailInterface {
       $this->messenger->addStatus($message);
       // @todo review submit
       // $result = civicrm_api3('Mailing', 'submit', $params);
-      // @todo execute process_mailing job
+      // @todo optionally execute process_mailing job via bundle configuration
+      // civicrm_api3_job_process_mailing($params); // in API v3 Job.php
       $this->logMailing($mailingResult, $entity, $params['groups']['include']);
     }
     else {

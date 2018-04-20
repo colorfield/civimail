@@ -33,6 +33,31 @@ function civimail_theme() {
     'entity_mailing' => [
       'render element' => 'elements',
     ],
+    // @todo set template suggestions
+    'civimail_html' => [
+      'variables' => [
+        'entity' => NULL,
+        'body' => NULL,
+        'absolute_link' => NULL,
+        'translation_links' => NULL,
+        'civicrm_header' => NULL,
+        'civicrm_footer' => NULL,
+        'civicrm_unsubscribe_url' => NULL,
+      ],
+      'render element' => 'children',
+    ],
+    'civimail_text' => [
+      'variables' => [
+        'entity' => NULL,
+        'body' => NULL,
+        'absolute_url' => NULL,
+        'translation_urls' => NULL,
+        'civicrm_header' => NULL,
+        'civicrm_footer' => NULL,
+        'civicrm_unsubscribe_url' => NULL,
+      ],
+      'render element' => 'children',
+    ],
   ];
 }
 
@@ -122,7 +147,7 @@ function civimail_set_entity_bundle_settings(array $settings, $entity_type_id, $
 /**
  * Returns civimail entity type bundle available settings.
  *
- * @return arraycivimail_get_entity_bundle_settings
+ * @return array
  *   List of entity bundle available settings.
  */
 function civimail_available_entity_bundle_settings() {
