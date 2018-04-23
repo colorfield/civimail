@@ -4,4 +4,4 @@ description: 'Integration with CiviCRM CiviMail'
 core: 8.x
 package: 'CiviCRM'
 dependencies:
-  - civicrm_entity
+  - drupal:civicrm_entity

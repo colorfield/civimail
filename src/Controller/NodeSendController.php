@@ -7,6 +7,7 @@ use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Datetime\DateFormatter;
 use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\node\Entity\Node;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Entity\EntityTypeManager;
 
@@ -165,10 +166,13 @@ class NodeSendController extends ControllerBase {
    *   Render array of sent messages and notify groups form.
    */
   public function mailing($node) {
-    // @todo check if this node is published first.
     $build = [];
     try {
+      /** @var Node $nodeEntity */
       $nodeEntity = $this->entityTypeManager->getStorage('node')->load($node);
+      if(!$nodeEntity->isPublished()) {
+        $this->messenger()->addWarning($this->t('This content is currently unpublished'));
+      }
       $civiMail = \Drupal::service('civimail');
       $mailingHistory = $civiMail->getEntityMailingHistory($nodeEntity);
       // @todo set render keys

@@ -163,12 +163,10 @@ class CiviMail implements CiviMailInterface {
     $viewMode = civimail_get_entity_bundle_settings('view_mode', $entity->getEntityTypeId(), $entity->bundle());
     $view = $viewBuilder->view($entity, $viewMode);
     $renderedView = \Drupal::service('renderer')->renderRoot($view);
-    // Absolutize first then shorten urls.
-    $absoluteUrls = $this->absolutizeUrls($renderedView);
-    $shortenUrls = $this->shortenUrls($absoluteUrls);
+    $viewWithAbsoluteUrls = $this->absolutizeUrls($renderedView);
     $build = [
       '#type' => 'markup',
-      '#markup' => $shortenUrls,
+      '#markup' => $viewWithAbsoluteUrls,
     ];
     return \Drupal::service('renderer')->renderRoot($build);
   }
@@ -184,9 +182,7 @@ class CiviMail implements CiviMailInterface {
    */
   private function getMailingBodyText(ContentEntityInterface $entity) {
     // @todo implement, review Mime Mail helpers
-    // Absolutize first then shorten.
     // $result = $this->absolutizeUrls($result);
-    // $result = $this->shortenUrls($result);
     return 'Plain text mail not implemented yet';
   }
 
@@ -216,22 +212,6 @@ class CiviMail implements CiviMailInterface {
       $text
     );
     return $result;
-  }
-
-  /**
-   * Shortens urls to comply with 128 chars CiviCRM database limit.
-   *
-   * This is necessary while using the click tracking, enabled by default.
-   *
-   * @param string $text
-   *   Text that contains absolute urls.
-   *
-   * @return string
-   *   Text replaced with shortened urls.
-   */
-  private function shortenUrls($text) {
-    // @todo implement
-    return $text;
   }
 
   /**
