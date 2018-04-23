@@ -62,14 +62,20 @@ class CiviMail implements CiviMailInterface {
     // Contact (Drupal) entity does not return an email without relationships,
     // so get the contact from the CiviCRM API.
     $fromContactDetails = $this->getContact(['contact_id' => $from_cid]);
+
+    $text = $this->getMailingTemplateText($entity);
+    $renderedText = \Drupal::service('renderer')->renderRoot($text);
+    $html = $this->getMailingTemplateHtml($entity);
+    $renderedHtml = \Drupal::service('renderer')->renderRoot($html);
     $result = [
+      // @todo the subject in an email can't be with HTML, so strip it.
       'subject' => $entity->label(),
       // @todo get header and footer / get template from the bundle config
       'header_id' => '',
       'footer_id' => '',
-      'body_text' => $this->getMailingTemplateText($entity),
-      'body_html' => $this->getMailingTemplateHtml($entity),
-    // @todo mailing name in CiviCRM, must be max. 128 chars
+      'body_text' => $renderedText,
+      'body_html' => $renderedHtml,
+      // @todo mailing name in CiviCRM, must be max. 128 chars
       'name' => $entity->label(),
       'created_id' => $fromContactDetails['contact_id'],
       // 'contact_id' => $fromContactDetails['contact_id'],.
@@ -101,8 +107,8 @@ class CiviMail implements CiviMailInterface {
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
    *   The content entity used for the body.
    *
-   * @return string
-   *   Markup of the mail template.
+   * @return array
+   *   Render array of the html mail template.
    */
   private function getMailingTemplateHtml(ContentEntityInterface $entity) {
     $link = Link::fromTextAndUrl(t('View it online'), $this->getAbsoluteEntityUrl($entity));
@@ -120,7 +126,7 @@ class CiviMail implements CiviMailInterface {
       '#civicrm_footer' => NULL,
       '#civicrm_unsubscribe_url' => '{action.unsubscribeUrl}',
     ];
-    return \Drupal::service('renderer')->renderRoot($build);
+    return $build;
   }
 
   /**
@@ -129,8 +135,8 @@ class CiviMail implements CiviMailInterface {
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
    *   The content entity used for the body.
    *
-   * @return string
-   *   Text of the mail template.
+   * @return array
+   *   Render array of the text mail template.
    */
   private function getMailingTemplateText(ContentEntityInterface $entity) {
     $build = [
@@ -146,7 +152,7 @@ class CiviMail implements CiviMailInterface {
       '#civicrm_footer' => NULL,
       '#civicrm_unsubscribe_url' => '{action.unsubscribeUrl}',
     ];
-    return \Drupal::service('renderer')->renderRoot($build);
+    return $build;
   }
 
   /**
@@ -348,10 +354,18 @@ class CiviMail implements CiviMailInterface {
       // but straight from CiviMail. CiviCRM tokens will not be available.
       $this->messenger->addWarning(t('You can improve HTML mail tests by installing the Mime Mail module.'));
     }
-    // The subject in an email can't be with HTML, so strip it.
+    // @todo use text mode
+    // $text = $this->getMailingTemplateText($entity);
+    // $text = $this->removeCiviCrmTokens($text);
+    // $renderedText = \Drupal::service('renderer')->renderRoot($text);
+    $html = $this->getMailingTemplateHtml($entity);
+    $html = $text = $this->removeCiviCrmTokens($html);
+    $renderedHtml = \Drupal::service('renderer')->renderRoot($html);
+
+    // @todo the subject in an email can't be with HTML, so strip it.
     $params['subject'] = t('[ TEST ] @subject', ['@subject' => $entity->label()]);
     // @todo get header and footer / get template from the bundle config
-    $params['body'] = $this->getMailingTemplateHtml($entity);
+    $params['body'] = $renderedHtml;
     // Pass the message entity along to hook_drupal_mail().
     $params['entity'] = $entity;
 
@@ -370,6 +384,23 @@ class CiviMail implements CiviMailInterface {
       $params
     );
     return $result;
+  }
+
+  /**
+   * Removes CiviCRM tokens from a mail render array.
+   *
+   * To be used by sendTestMail() because of Mime Mail delegation
+   * that ignores the CiviCRM context.
+   *
+   * @param array $build
+   *   The mail render array.
+   *
+   * @return array
+   *   The rendered array without the CiviCRM tokens.
+   */
+  private function removeCiviCrmTokens(array $build) {
+    $build['#civicrm_unsubscribe_url'] = NULL;
+    return $build;
   }
 
   /**
