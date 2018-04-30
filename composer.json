@@ -1,7 +1,7 @@
 {
   "name": "drupal/civimail",
   "type": "drupal-module",
-  "description": "Integration with CiviCRM CiviMail",
+  "description": "Integration with CiviCRM CiviMail.",
   "keywords": ["Drupal"],
   "license": "GPL-2.0+",
   "homepage": "https://www.drupal.org/project/civimail",
