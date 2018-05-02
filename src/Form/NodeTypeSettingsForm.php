@@ -81,13 +81,26 @@ class NodeTypeSettingsForm extends FormBase {
         ],
       ],
     ];
-    $form['groups'] = [
+    $form['from_groups'] = [
       '#type' => 'select',
-      '#title' => t('Groups'),
+      '#title' => t('Sender groups'),
       '#options' => $groupOptions,
-      '#description' => $this->t('Limit the CiviMail send form to the following groups for this content type.'),
+      '#description' => $this->t('Limit the CiviMail from contacts to the following CiviCRM groups for this content type.'),
       '#multiple' => TRUE,
-      '#default_value' => civimail_get_entity_bundle_settings('groups', 'node', $node_type),
+      '#default_value' => civimail_get_entity_bundle_settings('from_groups', 'node', $node_type),
+      '#states' => [
+        'visible' => [
+          ':input[name="enabled"]' => ['checked' => TRUE],
+        ],
+      ],
+    ];
+    $form['to_groups'] = [
+      '#type' => 'select',
+      '#title' => t('Recipient groups'),
+      '#options' => $groupOptions,
+      '#description' => $this->t('Limit the CiviMail send form to the following CiviCRM groups for this content type.'),
+      '#multiple' => TRUE,
+      '#default_value' => civimail_get_entity_bundle_settings('to_groups', 'node', $node_type),
       '#states' => [
         'visible' => [
           ':input[name="enabled"]' => ['checked' => TRUE],

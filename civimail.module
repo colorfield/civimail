@@ -179,7 +179,8 @@ function civimail_set_entity_bundle_settings(array $settings, $entity_type_id, $
 function civimail_available_entity_bundle_settings() {
   return [
     'enabled',
-    'groups',
+    'from_groups',
+    'to_groups',
     'view_mode',
   ];
 }
@@ -193,7 +194,8 @@ function civimail_available_entity_bundle_settings() {
 function civimail_get_entity_bundle_setting_defaults() {
   $defaults = [];
   $defaults['enabled'] = FALSE;
-  $defaults['groups'] = [];
+  $defaults['from_groups'] = [];
+  $defaults['to_groups'] = [];
   $defaults['view_mode'] = 'default';
   return $defaults;
 }

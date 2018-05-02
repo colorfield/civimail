@@ -10,7 +10,7 @@ Send a node from a CiviCRM Contact to CiviCRM Groups.
 
 - Per content type configuration: enable via the CiviMail tab. 
 Set then the view mode for the mail, and the groups
-that are eligible to receive the mail.
+that are eligible to send and receive the mail.
 - The CiviMail feature is available as a node local task 
 (while viewing or editing a node from a CiviMail enabled content type). 
 

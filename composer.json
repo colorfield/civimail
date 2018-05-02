@@ -12,7 +12,8 @@
   },
   "require": {
     "drupal/core": "~8.5",
-    "drupal/civicrm_entity": "3.x-dev"
+    "drupal/civicrm_entity": "3.x-dev",
+    "drupal/civicrm_tools": "1.x-dev"
   },
   "suggest": {
     "drupal/mimemail": "for integration with Mime Mail",

@@ -178,7 +178,7 @@ class NodeSendController extends ControllerBase {
       $build = [
         '#theme' => 'entity_mailing',
         '#entity' => $nodeEntity,
-        '#entity_send_form' => \Drupal::formBuilder()->getForm(EntitySendForm::class),
+        '#entity_send_form' => \Drupal::formBuilder()->getForm(EntitySendForm::class, $nodeEntity->bundle()),
         '#sent_mailings' => $this->renderTable($mailingHistory),
       ];
     }

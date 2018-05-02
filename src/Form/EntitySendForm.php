@@ -62,13 +62,25 @@ class EntitySendForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, $node_type = NULL) {
     if ($this->civiMail->hasCiviCrmRequirements()) {
-      // @todo add filter
-      // @todo add default contact
+      $bundleSettings = civimail_get_entity_bundle_settings('all', 'node', $node_type);
+      /** @var \Drupal\civicrm_tools\CiviCrmContact $civiCrmContact */
+      $civiCrmContact = \Drupal::service('civicrm_tools.contact');
+      $fromContacts = $civiCrmContact->getFromGroups($bundleSettings['from_groups']);
+
+      // CiviCRM Entity currently limits to 25 by default.
+      // $form['from_contact'] = [
+      // '#type' => 'entity_autocomplete',
+      // '#title' => $this->t('From'),
+      // '#description' => $this->t('The sender CiviCRM contact.'),
+      // '#target_type' => 'civicrm_contact',
+      // '#required' => TRUE,
+      // ];.
+      // @todo set site wide or per bundle default contact
       $form['from_contact'] = [
-        '#type' => 'entity_autocomplete',
+        '#type' => 'select',
         '#title' => $this->t('From'),
         '#description' => $this->t('The sender CiviCRM contact.'),
-        '#target_type' => 'civicrm_contact',
+        '#options' => $civiCrmContact->labelFormat($fromContacts),
         '#required' => TRUE,
       ];
       $form['test_mode'] = [
@@ -91,10 +103,11 @@ class EntitySendForm extends FormBase {
           ],
         ],
       ];
-      // @todo filter by groups that are configured for this content type
       $form['to_groups'] = [
         '#type' => 'select',
         '#title' => t('Groups'),
+        // @todo CiviCRM Entity currently limits to 25 by default.
+        // @todo filter by configured groups for this bundle.
         '#options' => $this->civiMail->getGroupEntitiesLabel(),
         '#multiple' => TRUE,
         '#limit_validation_errors' => ['submit'],

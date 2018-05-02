@@ -91,6 +91,8 @@ interface CiviMailInterface {
   /**
    * Prepares a list of Drupal CiviCRM Group entities.
    *
+   * @todo candidate for removal.
+   *
    * @return array
    *   List of labels indexed by group id.
    */
@@ -98,6 +100,8 @@ interface CiviMailInterface {
 
   /**
    * Prepares a list of Drupal CiviCRM Contact entities.
+   *
+   * @todo candidate for removal.
    *
    * @return array
    *   List of labels indexed by group id.
