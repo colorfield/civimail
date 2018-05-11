@@ -1,0 +1,7 @@
+name: 'CiviMail Digest'
+type: module
+description: 'Send a digest email from new or updated content previously sent by CiviMail.'
+core: 8.x
+package: 'CiviCRM'
+dependencies:
+  - civimail
