@@ -53,7 +53,7 @@ class NodeTypeSettingsForm extends FormBase {
       'node_type' => $node_type,
     ];
     $form_state->setStorage($storage);
-    $groupOptions = $this->civiMail->getGroupEntitiesLabel();
+    $groupOptions = $this->civiMail->getGroupSelectOptions();
     // @todo dependency injection
     $entityDisplayRepository = \Drupal::service('entity_display.repository');
     $viewModes = $entityDisplayRepository->getViewModeOptions('node');
@@ -71,7 +71,7 @@ class NodeTypeSettingsForm extends FormBase {
     ];
     $form['view_mode'] = [
       '#type' => 'select',
-      '#title' => t('View mode'),
+      '#title' => t('Mail view mode'),
       '#options' => $viewModes,
       '#description' => $this->t('View mode that will be used by CiviMail for the mail body.'),
       '#default_value' => civimail_get_entity_bundle_settings('view_mode', 'node', $node_type),

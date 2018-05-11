@@ -2,10 +2,9 @@
 
 namespace Drupal\civimail;
 
-use Drupal\civicrm_entity\CiviCrmApiInterface;
+use Drupal\civicrm_tools\CiviCrmApiInterface;
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Core\Entity\ContentEntityInterface;
-use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Link;
@@ -18,11 +17,11 @@ use Drupal\Core\Url;
 class CiviMail implements CiviMailInterface {
 
   /**
-   * Drupal\civicrm_entity\CiviCrmApiInterface definition.
+   * Drupal\civicrm_tools\CiviCrmApiInterface.
    *
-   * @var \Drupal\civicrm_entity\CiviCrmApiInterface
+   * @var \Drupal\civicrm_tools\CiviCrmApiInterface
    */
-  protected $civicrmEntityApi;
+  protected $civiCrmToolsApi;
 
   /**
    * Drupal\Core\Entity\EntityTypeManagerInterface definition.
@@ -48,8 +47,8 @@ class CiviMail implements CiviMailInterface {
   /**
    * Constructs a new CiviMail object.
    */
-  public function __construct(CiviCrmApiInterface $civicrm_entity_api, EntityTypeManagerInterface $entity_type_manager, LanguageManagerInterface $language_manager, MessengerInterface $messenger) {
-    $this->civicrmEntityApi = $civicrm_entity_api;
+  public function __construct(CiviCrmApiInterface $civicrm_tools_api, EntityTypeManagerInterface $entity_type_manager, LanguageManagerInterface $language_manager, MessengerInterface $messenger) {
+    $this->civiCrmToolsApi = $civicrm_tools_api;
     $this->entityTypeManager = $entity_type_manager;
     $this->languageManager = $language_manager;
     $this->messenger = $messenger;
@@ -245,7 +244,7 @@ class CiviMail implements CiviMailInterface {
    */
   public function sendMailing(array $params, ContentEntityInterface $entity) {
     $result = FALSE;
-    $mailingResult = $this->civicrmEntityApi->save('Mailing', $params);
+    $mailingResult = $this->civiCrmToolsApi->save('Mailing', $params);
     if ($mailingResult['is_error'] === 0) {
       $result = TRUE;
       // $message = t('CiviMail mailing for @subject scheduled.',
@@ -323,7 +322,7 @@ class CiviMail implements CiviMailInterface {
     $logsResult = $query->execute()->fetchAll();
     foreach ($logsResult as $row) {
       // Get the details of the mailing.
-      $civiCrmMailing = $this->civicrmEntityApi->get('Mailing', ['id' => $row->civicrm_mailing_id]);
+      $civiCrmMailing = $this->civiCrmToolsApi->get('Mailing', ['id' => $row->civicrm_mailing_id]);
       // There does not seem to be any api that gets mailing groups,
       // an issue could be opened for that.
       // A Drupal table currently stores the results.
@@ -424,7 +423,7 @@ class CiviMail implements CiviMailInterface {
    */
   public function getContact(array $filter) {
     $result = [];
-    $contacts = $this->civicrmEntityApi->get('Contact', $filter);
+    $contacts = $this->civiCrmToolsApi->get('Contact', $filter);
     // @todo getting the first contact found for the match
     // improve by letting know the user that there is probably
     // a contact mismatch because civicrm api returns default one if not found.
@@ -438,19 +437,11 @@ class CiviMail implements CiviMailInterface {
   /**
    * {@inheritdoc}
    */
-  public function getGroupEntitiesLabel() {
+  public function getGroupSelectOptions(array $filter = []) {
     $result = [];
-    try {
-      $civicrmStorage = \Drupal::entityTypeManager()->getStorage('civicrm_group');
-      $groups = $civicrmStorage->loadByProperties(['id' => 'civicrm_group']);
-      foreach ($groups as $id => $group) {
-        // Name seems to be used, getting title
-        // $result[$id] = $group->label();
-        $result[$id] = $group->get('title')->value;
-      }
-    }
-    catch (InvalidPluginDefinitionException $exception) {
-      $this->messenger->addError($exception->getMessage());
+    $groups = $this->civiCrmToolsApi->getAll('Group', $filter);
+    foreach ($groups as $gid => $group) {
+      $result[$gid] = $group['title'];
     }
     return $result;
   }
@@ -458,18 +449,11 @@ class CiviMail implements CiviMailInterface {
   /**
    * {@inheritdoc}
    */
-  public function getContactEntitiesLabel() {
+  public function getContactSelectOptions(array $filter) {
     $result = [];
-    try {
-      $civicrmStorage = \Drupal::entityTypeManager()->getStorage('civicrm_contact');
-      $contacts = $civicrmStorage->loadByProperties(['id' => 'civicrm_contact']);
-      foreach ($contacts as $id => $contact) {
-        // @todo cid
-        $result[$id] = $contact->label();
-      }
-    }
-    catch (InvalidPluginDefinitionException $exception) {
-      $this->messenger->addError($exception->getMessage());
+    $contacts = $this->civiCrmToolsApi->getAll('Contact', $filter);
+    foreach ($contacts as $cid => $contact) {
+      $result[$cid] = $contact['display_name'] . ' <' . $contact['email'] . '>';
     }
     return $result;
   }
@@ -478,36 +462,12 @@ class CiviMail implements CiviMailInterface {
    * {@inheritdoc}
    */
   public function hasCiviCrmRequirements() {
-    $result = TRUE;
-    // Check if CiviCRM Entity module is installed.
-    if (\Drupal::moduleHandler()->moduleExists('civicrm_entity')) {
-      // Check if the CiviCRM Group and Contact entities are enabled.
-      $civicrmEnabledEntities = array_filter(
-        $this->entityTypeManager->getDefinitions(),
-        function (EntityTypeInterface $type) {
-          return $type->getProvider() == 'civicrm_entity' && $type->get('civicrm_entity_ui_exposed');
-        }
-      );
-      if (!array_key_exists('civicrm_group', $civicrmEnabledEntities)) {
-        $result = FALSE;
-      }
-      if (!array_key_exists('civicrm_contact', $civicrmEnabledEntities)) {
-        $result = FALSE;
-      }
-      if (!$result) {
-        $civicrmEntityUrl = Url::fromRoute('civicrm_entity.settings', [], [
-          'query' => ['destination' => \Drupal::request()->getRequestUri()],
-        ]);
-        $civicrmEntityLink = Link::fromTextAndUrl(t('CiviCRM Group and Contact entities'), $civicrmEntityUrl);
-        $civicrmEntityLink = $civicrmEntityLink->toRenderable();
-        $this->messenger->addError(t('@civicrm_entity_link must be enabled.', [
-          '@civicrm_entity_link' => render($civicrmEntityLink),
-          '@group_types_link' => render($groupTypesLink),
-        ]));
-      }
+    $result = FALSE;
+    // Check if CiviCRM Tools module is installed.
+    if (\Drupal::moduleHandler()->moduleExists('civicrm_tools')) {
+      $result = TRUE;
     }
     else {
-      $result = FALSE;
       $this->messenger->addError(t('CiviCRM Entity module is not installed.'));
     }
     return $result;

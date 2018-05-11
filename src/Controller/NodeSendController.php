@@ -101,13 +101,13 @@ class NodeSendController extends ControllerBase {
       $mailing['mailing']['created_date']
     );
     $timeStamp = $dateTime->getTimestamp();
-    // @todo waiting to see how evolves the CiviCRM entity to introduce filters in CiviMailInterface.
-    $civicrmStorage = \Drupal::entityTypeManager()->getStorage('civicrm_group');
-    $groups = $civicrmStorage->loadByProperties(['id' => 'civicrm_group']);
+    // @todo filter by group id's.
+    $filter = [];
+    $groups = \Drupal::service('civicrm_tools.api')->get('Group', $filter);
     $groupLabels = [];
     foreach ($groups as $groupId => $group) {
       if (in_array($groupId, $mailing['groups'])) {
-        $groupLabels[] = $group->get('title')->value;
+        $groupLabels[] = $group['title'];
       }
     }
     return [

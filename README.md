@@ -20,7 +20,7 @@ that are eligible to send and receive the mail.
 [CiviCRM Core](https://github.com/civicrm/civicrm-core),
 [Drupal 8](https://github.com/drupal/drupal),
 [CiviCRM Drupal](https://github.com/civicrm/civicrm-drupal),
-[CiviCRM Entity](https://drupal.org/project/civicrm_entity)
+[CiviCRM Tools](https://drupal.org/project/civicrm_tools)
 
 ## Roadmap
 

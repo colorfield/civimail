@@ -89,24 +89,26 @@ interface CiviMailInterface {
   public function getEntityFromRoute($entity_type_id);
 
   /**
-   * Prepares a list of Drupal CiviCRM Group entities.
+   * Prepares a list of CiviCRM Groups for select form element.
    *
-   * @todo candidate for removal.
+   * @param array $filter
+   *   Group filter.
    *
    * @return array
-   *   List of labels indexed by group id.
+   *   Map of group labels indexed by group id.
    */
-  public function getGroupEntitiesLabel();
+  public function getGroupSelectOptions(array $filter = []);
 
   /**
-   * Prepares a list of Drupal CiviCRM Contact entities.
+   * Prepares a list of CiviCRM Contacts for select form element.
    *
-   * @todo candidate for removal.
+   * @param array $filter
+   *   Contact filter.
    *
    * @return array
-   *   List of labels indexed by group id.
+   *   Map of contact labels indexed by contact id.
    */
-  public function getContactEntitiesLabel();
+  public function getContactSelectOptions(array $filter);
 
   /**
    * Indicates if CiviCRM requirements are fulfilled.
