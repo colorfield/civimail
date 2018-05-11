@@ -67,12 +67,19 @@ class EntitySendForm extends FormBase {
       /** @var \Drupal\civicrm_tools\CiviCrmContact $civiCrmContact */
       $civiCrmContact = \Drupal::service('civicrm_tools.contact');
       $fromContacts = $civiCrmContact->getFromGroups($bundleSettings['from_groups']);
-      // @todo set site wide or per bundle default contact
+
+      // Try to set the sender default contact from the current logged in user.
+      $fromDefaultContact = NULL;
+      $currentContact = $civiCrmContact->getFromLoggedInUser();
+      if (array_key_exists($currentContact['contact_id'], $fromContacts)) {
+        $fromDefaultContact = $currentContact;
+      }
       $form['from_contact'] = [
         '#type' => 'select',
         '#title' => $this->t('From'),
         '#description' => $this->t('The sender CiviCRM contact.'),
         '#options' => $civiCrmContact->labelFormat($fromContacts),
+        '#default_value' => $fromDefaultContact,
         '#required' => TRUE,
       ];
       $form['test_mode'] = [

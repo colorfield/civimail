@@ -81,11 +81,12 @@ class NodeTypeSettingsForm extends FormBase {
         ],
       ],
     ];
+    // @todo add 'only' / 'all except those selected'
     $form['from_groups'] = [
       '#type' => 'select',
       '#title' => t('Sender groups'),
       '#options' => $groupOptions,
-      '#description' => $this->t('Limit the CiviMail from contacts to the following CiviCRM groups for this content type.'),
+      '#description' => $this->t('Limit the CiviMail from contacts to the following CiviCRM groups for this content type. All apply if none selected.'),
       '#multiple' => TRUE,
       '#default_value' => civimail_get_entity_bundle_settings('from_groups', 'node', $node_type),
       '#states' => [
@@ -94,11 +95,12 @@ class NodeTypeSettingsForm extends FormBase {
         ],
       ],
     ];
+    // @todo add 'only' / 'all except those selected'
     $form['to_groups'] = [
       '#type' => 'select',
       '#title' => t('Recipient groups'),
       '#options' => $groupOptions,
-      '#description' => $this->t('Limit the CiviMail send form to the following CiviCRM groups for this content type.'),
+      '#description' => $this->t('Limit the CiviMail send form to the following CiviCRM groups for this content type. All apply if none selected.'),
       '#multiple' => TRUE,
       '#default_value' => civimail_get_entity_bundle_settings('to_groups', 'node', $node_type),
       '#states' => [

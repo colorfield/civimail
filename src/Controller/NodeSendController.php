@@ -115,7 +115,7 @@ class NodeSendController extends ControllerBase {
       'subject' => $mailing['mailing']['subject'],
     // @todo link with from_name
       'from' => $mailing['mailing']['from_email'],
-      'groups' => implode(',', $groupLabels),
+      'groups' => implode(', ', $groupLabels),
       'created' => $this->dateFormatter->format($timeStamp, 'short'),
     ];
   }

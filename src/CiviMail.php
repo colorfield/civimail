@@ -351,7 +351,7 @@ class CiviMail implements CiviMailInterface {
     if (!\Drupal::moduleHandler()->moduleExists('mimemail')) {
       // And ideally tests should not be done by Mime Mail
       // but straight from CiviMail. CiviCRM tokens will not be available.
-      $this->messenger->addWarning(t('You can improve HTML mail tests by installing the Mime Mail module.'));
+      $this->messenger->addWarning(t('You can add support for HTML test mails by installing the Mime Mail module.'));
     }
     // @todo use text mode
     // $text = $this->getMailingTemplateText($entity);
