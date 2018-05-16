@@ -247,14 +247,21 @@ class CiviMail implements CiviMailInterface {
     $mailingResult = $this->civiCrmToolsApi->save('Mailing', $params);
     if ($mailingResult['is_error'] === 0) {
       $result = TRUE;
-      // $message = t('CiviMail mailing for @subject scheduled.',
-      // ['@subject' => $result['values'][$result['id']]['subject'],]);.
-      $message = t('CiviMail mailing for <em>@subject</em> scheduled.', ['@subject' => $params['subject']]);
-      $this->messenger->addStatus($message);
-      // @todo review submit
+      $executeJobUrl = Url::fromUserInput('/civicrm/admin/runjobs?reset=1');
+      $executeJobLink = Link::fromTextAndUrl(t('Send immediately'), $executeJobUrl);
+      $executeJobLink = $executeJobLink->toRenderable();
+      $executeJobLink = render($executeJobLink);
+      // @todo review execute job link by something more accurate that running all the jobs.
       // $result = civicrm_api3('Mailing', 'submit', $params);
       // @todo optionally execute process_mailing job via bundle configuration
       // civicrm_api3_job_process_mailing($params); // in API v3 Job.php
+      $message = t('CiviMail mailing for <em>@subject</em> scheduled. @execute_job_link.',
+        [
+          '@subject' => $params['subject'],
+          '@execute_job_link' => $executeJobLink,
+        ]
+      );
+      $this->messenger->addStatus($message);
       $this->logMailing($mailingResult, $entity, $params['groups']['include']);
     }
     else {
