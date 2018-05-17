@@ -109,7 +109,7 @@ class CiviMail implements CiviMailInterface {
     $build = [
       '#theme' => 'civimail_html',
       '#entity' => $entity,
-      '#body' => $this->getMailingBodyHtml($entity),
+      '#entity_view' => $this->getMailingBodyHtml($entity),
       # Allows template overrides to load assets provided by the current theme
       # with {{ base_path ~ directory }}
       '#base_path' => \Drupal::request()->getSchemeAndHttpHost() . '/',
@@ -132,7 +132,7 @@ class CiviMail implements CiviMailInterface {
     $build = [
       '#theme' => 'civimail_text',
       '#entity' => $entity,
-      '#body' => $this->getMailingBodyText($entity),
+      '#entity_view' => $this->getMailingBodyText($entity),
       '#absolute_url' => $this->getAbsoluteEntityUrl($entity)->toString(),
     // @todo
       '#translation_urls' => NULL,

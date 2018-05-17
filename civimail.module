@@ -37,7 +37,7 @@ function civimail_theme() {
     'civimail_html' => [
       'variables' => [
         'entity' => NULL,
-        'body' => NULL,
+        'entity_view' => NULL,
         'base_path' => NULL,
         'absolute_link' => NULL,
         'translation_links' => NULL,
@@ -50,7 +50,7 @@ function civimail_theme() {
     'civimail_text' => [
       'variables' => [
         'entity' => NULL,
-        'body' => NULL,
+        'entity_view' => NULL,
         'absolute_url' => NULL,
         'translation_urls' => NULL,
         'civicrm_header' => NULL,
