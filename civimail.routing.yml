@@ -2,7 +2,7 @@ entity.node.civimail:
  path: '/node/{node}/civimail'
  defaults:
    _controller: '\Drupal\civimail\Controller\NodeSendController::mailing'
-   _title: 'Send node to CiviCRM groups'
+   _title: 'Send content to CiviCRM groups'
  requirements:
    _civimail_node_page_access: 'TRUE'
    _permission: 'use civimail'
@@ -24,6 +24,6 @@ civimail.mail_preview:
   path: '/civimail/preview/{entity_type}/{entity_id}'
   defaults:
     _controller: '\Drupal\civimail\Controller\MailPreviewController::preview'
-    _title: 'Mail preview'
+    _title: 'Preview mail'
   requirements:
     _permission: 'use civimail'

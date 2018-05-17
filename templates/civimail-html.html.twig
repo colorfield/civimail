@@ -2,14 +2,16 @@
 /**
  * @file
  * Default theme implementation for HTML mail.
- * @todo documentation
+ * Variables:
+ * - base_path : The absolute URL, with a trailing slash.
+ *   Allows template overrides to load assets provided by the current theme
+ *   with {{ base_path ~ directory }}
+ * - @todo documentation
 #}
 
 {% if civicrm_header %}
    {{ civicrm_header }}
 {% endif %}
-
-{{ base_path }}
 
 {{ absolute_link }}
 
