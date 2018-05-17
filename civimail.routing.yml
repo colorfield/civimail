@@ -6,9 +6,11 @@ entity.node.civimail:
  requirements:
    _civimail_node_page_access: 'TRUE'
    _permission: 'use civimail'
- options:
-   _node_operation_route: TRUE
-   _admin_route: TRUE
+ # @todo review how to use admin route and still allow override
+ # of civimail templates by the frontend theme.
+ #options:
+   #_node_operation_route: TRUE
+   #_admin_route: TRUE
 
 entity.node_type.civimail:
   path: '/admin/structure/types/manage/{node_type}/civimail'
@@ -17,3 +19,11 @@ entity.node_type.civimail:
     _form: '\Drupal\civimail\Form\NodeTypeSettingsForm'
   requirements:
     _permission: 'administer civimail'
+
+civimail.mail_preview:
+  path: '/civimail/preview/{entity_type}/{entity_id}'
+  defaults:
+    _controller: '\Drupal\civimail\Controller\MailPreviewController::preview'
+    _title: 'Mail preview'
+  requirements:
+    _permission: 'use civimail'

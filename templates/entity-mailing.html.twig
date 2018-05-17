@@ -5,6 +5,7 @@
  *
  * Available variables:
  * - title: The entity title.
+ * - preview_link: The mail preview link.
  * - entity: The entity that is the subject of the mailing.
  * - entity_send_form: A form to send the entity to CiviCRM groups.
  * - sent_mailings: The table of already sent mailings for this entity.
@@ -18,5 +19,6 @@
 <div{{ attributes }}>
     <h1>{{ title }}</h1>
     <div>{{ entity_send_form }}</div>
+    <div>{{ preview_link }}</div>
     <div>{{ sent_mailings }}</div>
 </div>

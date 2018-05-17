@@ -101,15 +101,9 @@ class CiviMail implements CiviMailInterface {
   }
 
   /**
-   * Returns the markup for the mailing body wrapped in a mail template.
-   *
-   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
-   *   The content entity used for the body.
-   *
-   * @return array
-   *   Render array of the html mail template.
+   * {@inheritdoc}
    */
-  private function getMailingTemplateHtml(ContentEntityInterface $entity) {
+  public function getMailingTemplateHtml(ContentEntityInterface $entity) {
     $link = Link::fromTextAndUrl(t('View it online'), $this->getAbsoluteEntityUrl($entity));
     $link = $link->toRenderable();
     $build = [
@@ -129,15 +123,9 @@ class CiviMail implements CiviMailInterface {
   }
 
   /**
-   * Returns the the mailing body as plain text wrapped in a mail template.
-   *
-   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
-   *   The content entity used for the body.
-   *
-   * @return array
-   *   Render array of the text mail template.
+   * {@inheritdoc}
    */
-  private function getMailingTemplateText(ContentEntityInterface $entity) {
+  public function getMailingTemplateText(ContentEntityInterface $entity) {
     $build = [
       '#theme' => 'civimail_text',
       '#entity' => $entity,
@@ -365,7 +353,7 @@ class CiviMail implements CiviMailInterface {
     // $text = $this->removeCiviCrmTokens($text);
     // $renderedText = \Drupal::service('renderer')->renderRoot($text);
     $html = $this->getMailingTemplateHtml($entity);
-    $html = $text = $this->removeCiviCrmTokens($html);
+    $html = $this->removeCiviCrmTokens($html);
     $renderedHtml = \Drupal::service('renderer')->renderRoot($html);
 
     // @todo the subject in an email can't be with HTML, so strip it.
@@ -404,7 +392,7 @@ class CiviMail implements CiviMailInterface {
    * @return array
    *   The rendered array without the CiviCRM tokens.
    */
-  private function removeCiviCrmTokens(array $build) {
+  public function removeCiviCrmTokens(array $build) {
     $build['#civicrm_unsubscribe_url'] = NULL;
     return $build;
   }

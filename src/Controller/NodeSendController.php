@@ -7,6 +7,9 @@ use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Datetime\DateFormatter;
 use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Entity\EntityTypeManager;
 
@@ -129,7 +132,7 @@ class NodeSendController extends ControllerBase {
    * @return array
    *   Table render array.
    */
-  public function renderTable(array $mailing_history) {
+  private function buildTable(array $mailing_history) {
     // @todo composition with entity list builder.
     $build['table'] = [
       '#type' => 'table',
@@ -156,6 +159,25 @@ class NodeSendController extends ControllerBase {
   }
 
   /**
+   * Returns a mail preview link for an entity.
+   *
+   * @param EntityInterface $entity
+   *   The entity that is the subject of the preview.
+   *
+   * @return Link
+   *   The preview Link
+   */
+  private function getPreviewLink(EntityInterface $entity) {
+    // @todo use ajax or entity_overlay
+    $url = Url::fromRoute('civimail.mail_preview', [
+      'entity_type' => $entity->getEntityTypeId(),
+      'entity_id' => $entity->id(),
+    ], ['attributes' => ['target' => '_blank']]);
+    $result = Link::fromTextAndUrl($this->t('Preview mail'), $url);
+    return $result;
+  }
+
+  /**
    * Gets sent mailings per group and provides group notify feature.
    *
    * @param int $node
@@ -178,8 +200,9 @@ class NodeSendController extends ControllerBase {
       $build = [
         '#theme' => 'entity_mailing',
         '#entity' => $nodeEntity,
+        '#preview_link' => $this->getPreviewLink($nodeEntity),
         '#entity_send_form' => \Drupal::formBuilder()->getForm(EntitySendForm::class, $nodeEntity->bundle()),
-        '#sent_mailings' => $this->renderTable($mailingHistory),
+        '#sent_mailings' => $this->buildTable($mailingHistory),
       ];
     }
     catch (InvalidPluginDefinitionException $exception) {

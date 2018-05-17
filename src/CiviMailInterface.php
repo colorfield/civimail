@@ -25,6 +25,28 @@ interface CiviMailInterface {
   public function getEntityMailingParams($from_cid, ContentEntityInterface $entity, array $groups);
 
   /**
+   * Returns the markup for the mailing body wrapped in a mail template.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The content entity used for the body.
+   *
+   * @return array
+   *   Render array of the html mail template.
+   */
+  public function getMailingTemplateHtml(ContentEntityInterface $entity);
+
+  /**
+   * Returns the the mailing body as plain text wrapped in a mail template.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The content entity used for the body.
+   *
+   * @return array
+   *   Render array of the text mail template.
+   */
+  public function getMailingTemplateText(ContentEntityInterface $entity);
+
+  /**
    * Schedules and sends a CiviCRM mailing.
    *
    * @param array $params
@@ -76,6 +98,20 @@ interface CiviMailInterface {
    *   The contact details.
    */
   public function getContact(array $filter);
+
+  /**
+   * Removes CiviCRM tokens from a mail render array.
+   *
+   * To be used by sendTestMail() because of Mime Mail delegation
+   * that ignores the CiviCRM context.
+   *
+   * @param array $build
+   *   The mail render array.
+   *
+   * @return array
+   *   The rendered array without the CiviCRM tokens.
+   */
+  public function removeCiviCrmTokens(array $build);
 
   /**
    * Returns the entity for the current route.

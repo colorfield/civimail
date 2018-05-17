@@ -76,6 +76,7 @@ function civimail_theme() {
  */
 function template_preprocess_entity_mailing(array &$variables) {
   $variables['entity'] = $variables['elements']['#entity'];
+  $variables['preview_link'] = $variables['elements']['#preview_link'];
   $variables['entity_send_form'] = $variables['elements']['#entity_send_form'];
   $variables['sent_mailings'] = $variables['elements']['#sent_mailings'];
 
