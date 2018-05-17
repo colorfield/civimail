@@ -8,6 +8,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Class MailPreviewController.
@@ -76,8 +77,8 @@ class MailPreviewController extends ControllerBase {
   /**
    * Previews a mail for an entity.
    *
-   * @return array
-   *   Return render array of the mail preview
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   HTML Response of the mail preview.
    */
   public function preview($entity_type, $entity_id) {
     $build = [];
@@ -96,7 +97,9 @@ class MailPreviewController extends ControllerBase {
           ]),
       ];
     }
-    return $build;
+    // @todo review CacheableResponse
+    $output = \Drupal::service('renderer')->renderRoot($build);
+    return new Response($output);
   }
 
 }
