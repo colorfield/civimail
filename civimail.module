@@ -38,6 +38,7 @@ function civimail_theme() {
       'variables' => [
         'entity' => NULL,
         'body' => NULL,
+        'base_path' => NULL,
         'absolute_link' => NULL,
         'translation_links' => NULL,
         'civicrm_header' => NULL,

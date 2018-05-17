@@ -110,6 +110,9 @@ class CiviMail implements CiviMailInterface {
       '#theme' => 'civimail_html',
       '#entity' => $entity,
       '#body' => $this->getMailingBodyHtml($entity),
+      # Allows template overrides to load assets provided by the current theme
+      # with {{ base_path ~ directory }}
+      '#base_path' => \Drupal::request()->getSchemeAndHttpHost() . '/',
       '#absolute_link' => \Drupal::service('renderer')->renderRoot($link),
     // @todo
       '#translation_links' => NULL,
