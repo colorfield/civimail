@@ -105,6 +105,7 @@ class EntitySendForm extends FormBase {
       $form['to_groups'] = [
         '#type' => 'select',
         '#title' => t('Groups'),
+        '#description' => $this->t('The CiviCRM groups that will receive the mailing.'),
         // @todo filter by configured groups for this bundle.
         // @todo use civicrm_tools.group service with labelFormat method
         '#options' => $this->civiMail->getGroupSelectOptions(),
