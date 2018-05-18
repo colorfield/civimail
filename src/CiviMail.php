@@ -110,8 +110,8 @@ class CiviMail implements CiviMailInterface {
       '#theme' => 'civimail_html',
       '#entity' => $entity,
       '#entity_view' => $this->getMailingBodyHtml($entity),
-      # Allows template overrides to load assets provided by the current theme
-      # with {{ base_path ~ directory }}
+      // Allows template overrides to load assets provided by the current theme
+      // with {{ base_path ~ directory }}.
       '#base_path' => \Drupal::request()->getSchemeAndHttpHost() . '/',
       '#absolute_link' => \Drupal::service('renderer')->renderRoot($link),
     // @todo
@@ -238,7 +238,8 @@ class CiviMail implements CiviMailInterface {
     $mailingResult = $this->civiCrmToolsApi->save('Mailing', $params);
     if ($mailingResult['is_error'] === 0) {
       $result = TRUE;
-      $executeJobUrl = Url::fromUserInput('/civicrm/admin/runjobs?reset=1');
+      $executeJobUrl = Url::fromUserInput('/civicrm/admin/runjobs?reset=1',
+        ['attributes' => ['target' => '_blank']]);
       $executeJobLink = Link::fromTextAndUrl(t('Send immediately'), $executeJobUrl);
       $executeJobLink = $executeJobLink->toRenderable();
       $executeJobLink = render($executeJobLink);
@@ -409,6 +410,16 @@ class CiviMail implements CiviMailInterface {
     try {
       /** @var \Drupal\Core\Entity\ContentEntityInterface $entity */
       $entity = $this->entityTypeManager->getStorage($entity_type_id)->load($entityId);
+      // Check if the site is multilingual.
+      // If so, set the current entity to the current interface language
+      // when it has a translation.
+      $languageManager = \Drupal::languageManager();
+      if ($languageManager->isMultilingual()) {
+        $languageId = $languageManager->getCurrentLanguage()->getId();
+        if ($entity->hasTranslation($languageId)) {
+          $entity = $entity->getTranslation($languageId);
+        }
+      }
     }
     catch (InvalidPluginDefinitionException $exception) {
       $this->messenger->addError($exception->getMessage());

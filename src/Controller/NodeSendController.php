@@ -161,10 +161,10 @@ class NodeSendController extends ControllerBase {
   /**
    * Returns a mail preview link for an entity.
    *
-   * @param EntityInterface $entity
+   * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The entity that is the subject of the preview.
    *
-   * @return Link
+   * @return \Drupal\Core\Link
    *   The preview Link
    */
   private function getPreviewLink(EntityInterface $entity) {
@@ -178,7 +178,7 @@ class NodeSendController extends ControllerBase {
   }
 
   /**
-   * Gets sent mailings per group and provides group notify feature.
+   * Gets sent mailings per group.
    *
    * @param int $node
    *   Node entity id.
@@ -194,6 +194,18 @@ class NodeSendController extends ControllerBase {
       if (!$nodeEntity->isPublished()) {
         $this->messenger()->addWarning($this->t('This content is currently unpublished'));
       }
+
+      // Check if the site is multilingual.
+      // If so, set the current node to the current interface language
+      // when it has a translation.
+      $languageManager = \Drupal::languageManager();
+      if ($languageManager->isMultilingual()) {
+        $languageId = $languageManager->getCurrentLanguage()->getId();
+        if ($nodeEntity->hasTranslation($languageId)) {
+          $nodeEntity = $nodeEntity->getTranslation($languageId);
+        }
+      }
+
       $civiMail = \Drupal::service('civimail');
       $mailingHistory = $civiMail->getEntityMailingHistory($nodeEntity);
       // @todo set render keys

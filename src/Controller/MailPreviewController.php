@@ -34,7 +34,7 @@ class MailPreviewController extends ControllerBase {
    *
    * @param \Drupal\civimail\CiviMailInterface $civi_mail
    *   The CiviMail service.
-   * @param EntityTypeManagerInterface $entity_type_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   EntityTypeManager definition.
    */
   public function __construct(CiviMailInterface $civi_mail, EntityTypeManagerInterface $entity_type_manager) {
@@ -66,7 +66,18 @@ class MailPreviewController extends ControllerBase {
   private function loadEntity($entity_type, $entity_id) {
     $result = NULL;
     try {
+      /** @var \Drupal\Core\Entity\ContentEntityInterface $result */
       $result = $this->entityTypeManager->getStorage($entity_type)->load($entity_id);
+      // Check if the site is multilingual.
+      // If so, set the current entity to the current interface language
+      // when it has a translation.
+      $languageManager = \Drupal::languageManager();
+      if ($languageManager->isMultilingual()) {
+        $languageId = $languageManager->getCurrentLanguage()->getId();
+        if ($result->hasTranslation($languageId)) {
+          $result = $result->getTranslation($languageId);
+        }
+      }
     }
     catch (InvalidPluginDefinitionException $exception) {
       \Drupal::messenger()->addError($exception->getMessage());
