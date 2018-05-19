@@ -140,12 +140,12 @@ class EntitySendForm extends FormBase {
     $testMail = $form_state->getValue('test_mail');
     $entity = $this->civiMail->getEntityFromRoute('node');
     if ($testMode) {
-      $mailingResult = $this->civiMail->sendTestMail($fromCid, $entity, $testMail);
+      $this->civiMail->sendTestMail($fromCid, $entity, $testMail);
     }
     else {
       $groups = $form_state->getValue('to_groups');
       $params = $this->civiMail->getEntityMailingParams($fromCid, $entity, $groups);
-      $mailingResult = $this->civiMail->sendMailing($params, $entity);
+      $this->civiMail->sendMailing($params, $entity);
     }
   }
 

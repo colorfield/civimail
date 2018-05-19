@@ -353,12 +353,14 @@ class CiviMail implements CiviMailInterface {
       $this->messenger->addWarning(t('You can add support for HTML test mails by installing the Mime Mail module.'));
     }
     // @todo use text mode
-    // $text = $this->getMailingTemplateText($entity);
-    // $text = $this->removeCiviCrmTokens($text);
-    // $renderedText = \Drupal::service('renderer')->renderRoot($text);
-    $html = $this->getMailingTemplateHtml($entity);
-    $html = $this->removeCiviCrmTokens($html);
-    $renderedHtml = \Drupal::service('renderer')->renderRoot($html);
+    // $textBuild = $this->getMailingTemplateText($entity);
+    // $textBuild = $this->removeCiviCrmTokens($textBuild);
+    // $textBuild['#is_test'] = TRUE;
+    // $renderedText = \Drupal::service('renderer')->renderRoot($textBuild);
+    $htmlBuild = $this->getMailingTemplateHtml($entity, TRUE);
+    $htmlBuild = $this->removeCiviCrmTokens($htmlBuild);
+    $htmlBuild['#is_test'] = TRUE;
+    $renderedHtml = \Drupal::service('renderer')->renderRoot($htmlBuild);
 
     // @todo the subject in an email can't be with HTML, so strip it.
     $params['subject'] = t('[ TEST ] @subject', ['@subject' => $entity->label()]);
@@ -381,6 +383,14 @@ class CiviMail implements CiviMailInterface {
       $entity->language()->getId(),
       $params
     );
+
+    if ($result) {
+      \Drupal::messenger()->addMessage(t('Your test has been sent to @mail.', ['@mail' => $to_mail]));
+    }
+    else {
+      \Drupal::messenger()->addError(t('There has been an error while sending the test to @mail.', ['@mail' => $to_mail]));
+    }
+
     return $result;
   }
 
