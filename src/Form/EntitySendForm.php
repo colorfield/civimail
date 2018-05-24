@@ -85,6 +85,9 @@ class EntitySendForm extends FormBase {
       $form['test_mode'] = [
         '#type' => 'checkbox',
         '#title' => t('Send a test'),
+        // @todo remove once https://www.drupal.org/project/mimemail/issues/2863079
+        // is fixed, because test mails are relying on mimemail.
+        '#access' => FALSE,
       ];
       $form['test_mail'] = [
         '#type' => 'textfield',
@@ -97,10 +100,15 @@ class EntitySendForm extends FormBase {
           'visible' => [
             ':input[name="test_mode"]' => ['checked' => TRUE],
           ],
-          'required' => [
-            ':input[name="test_mode"]' => ['checked' => TRUE],
-          ],
+          // @todo set back once https://www.drupal.org/project/mimemail/issues/2863079
+          // is fixed, because test mails are relying on mimemail.
+          // 'required' => [
+          // ':input[name="test_mode"]' => ['checked' => TRUE],
+          // ],
         ],
+        // @todo remove once https://www.drupal.org/project/mimemail/issues/2863079
+        // is fixed, because test mails are relying on mimemail.
+        '#access' => FALSE,
       ];
       $form['to_groups'] = [
         '#type' => 'select',

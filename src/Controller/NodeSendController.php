@@ -192,7 +192,7 @@ class NodeSendController extends ControllerBase {
       /** @var \Drupal\node\Entity\Node $nodeEntity */
       $nodeEntity = $this->entityTypeManager->getStorage('node')->load($node);
       if (!$nodeEntity->isPublished()) {
-        $this->messenger()->addWarning($this->t('This content is currently unpublished'));
+        $this->messenger()->addWarning($this->t('This content is currently unpublished.'));
       }
 
       // Check if the site is multilingual.

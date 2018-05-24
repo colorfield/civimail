@@ -77,7 +77,7 @@ class CiviMail implements CiviMailInterface {
       // @todo mailing name in CiviCRM, must be max. 128 chars
       'name' => $entity->label(),
       'created_id' => $fromContactDetails['contact_id'],
-      // 'contact_id' => $fromContactDetails['contact_id'],.
+      // @todo Sent by
       'from_name'  => $fromContactDetails['display_name'],
       'from_email' => $fromContactDetails['email'],
       'replyto_email'  => $fromContactDetails['email'],
@@ -357,13 +357,13 @@ class CiviMail implements CiviMailInterface {
     // $textBuild = $this->removeCiviCrmTokens($textBuild);
     // $textBuild['#is_test'] = TRUE;
     // $renderedText = \Drupal::service('renderer')->renderRoot($textBuild);
-    $htmlBuild = $this->getMailingTemplateHtml($entity, TRUE);
+    $htmlBuild = $this->getMailingTemplateHtml($entity);
     $htmlBuild = $this->removeCiviCrmTokens($htmlBuild);
     $htmlBuild['#is_test'] = TRUE;
     $renderedHtml = \Drupal::service('renderer')->renderRoot($htmlBuild);
 
     // @todo the subject in an email can't be with HTML, so strip it.
-    $params['subject'] = t('[ TEST ] @subject', ['@subject' => $entity->label()]);
+    $params['subject'] = t('[TEST] @subject', ['@subject' => $entity->label()]);
     // @todo get header and footer / get template from the bundle config
     $params['body'] = $renderedHtml;
     // Pass the message entity along to hook_drupal_mail().
