@@ -78,7 +78,7 @@ class CiviMail implements CiviMailInterface {
       'name' => $entity->label(),
       'created_id' => $fromContactDetails['contact_id'],
       // @todo Sent by
-      'from_name'  => $fromContactDetails['display_name'],
+      'from_name'  => $fromContactDetails['sort_name'],
       'from_email' => $fromContactDetails['email'],
       'replyto_email'  => $fromContactDetails['email'],
       // CiviMail removes duplicate contacts among groups.
