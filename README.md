@@ -24,14 +24,8 @@ that are eligible to send and receive the mail.
 
 ## Roadmap
 
-- **Send test mails via CiviCRM.** 
-Currently test mails are not sent via CiviMail but via Drupal mail.
-So it needs extra configuration with MimeMail while sending HTML.
-There is no CiviCRM API for that, but it really makes sense to test
-through CiviMail.
-- **Send immediately.** CiviMail campaigns are scheduled before 
-being actually sent (waiting for the scheduled jobs to be executed).
-Add an option to send immediately.
-- **CiviMail Digest submodule.** Send to selected groups a digest at
-a chosen interval of all nodes that were sent, with an option to include
-updates. 
+- Send test mails via CiviCRM.
+- Write documentation for Layout integration.
+- CiviMail Digest submodule. Send to selected groups a digest at
+a chosen interval of nodes that were sent, with an option to include
+updates.
