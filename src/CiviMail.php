@@ -203,7 +203,7 @@ class CiviMail implements CiviMailInterface {
       $publicFilesBaseUrl = $wrapper->getExternalUrl();
     }
     $result = str_replace(
-      ['href="/', 'src="/' . $publicDirectory . '/',],
+      ['href="/', 'src="/' . $publicDirectory . '/'],
       ['href="' . $baseUrl . '/', 'src="' . $publicFilesBaseUrl],
       $text
     );
