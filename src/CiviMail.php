@@ -4,6 +4,7 @@ namespace Drupal\civimail;
 
 use Drupal\civicrm_tools\CiviCrmApiInterface;
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
+use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
@@ -66,16 +67,15 @@ class CiviMail implements CiviMailInterface {
     $renderedText = \Drupal::service('renderer')->renderRoot($text);
     $html = $this->getMailingTemplateHtml($entity);
     $renderedHtml = \Drupal::service('renderer')->renderRoot($html);
+    $subject = Unicode::truncate($entity->label(), 128, TRUE, TRUE);
     $result = [
-      // @todo the subject in an email can't be with HTML, so strip it.
-      'subject' => $entity->label(),
+      'subject' => $subject,
       // @todo get header and footer / get template from the bundle config
       'header_id' => '',
       'footer_id' => '',
       'body_text' => $renderedText,
       'body_html' => $renderedHtml,
-      // @todo mailing name in CiviCRM, must be max. 128 chars
-      'name' => $entity->label(),
+      'name' => $subject,
       'created_id' => $fromContactDetails['contact_id'],
       // @todo Sent by
       'from_name'  => $fromContactDetails['sort_name'],
