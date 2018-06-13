@@ -70,7 +70,7 @@ class EntitySendForm extends FormBase {
 
       // Try to set the sender default contact from the current logged in user.
       $fromDefaultContact = NULL;
-      $currentContact = $civiCrmContact->getFromLoggedInUser();
+      $currentContact = $civiCrmContact->getFromLoggedInUser(CIVICRM_DOMAIN_ID);
       if (array_key_exists($currentContact['contact_id'], $fromContacts)) {
         $fromDefaultContact = $currentContact;
       }
