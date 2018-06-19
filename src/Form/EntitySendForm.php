@@ -79,7 +79,7 @@ class EntitySendForm extends FormBase {
         '#title' => $this->t('From'),
         '#description' => $this->t('The sender CiviCRM contact.'),
         '#options' => $civiCrmContact->labelFormat($fromContacts),
-        '#default_value' => $fromDefaultContact,
+        '#default_value' => $fromDefaultContact['contact_id'],
         '#required' => TRUE,
       ];
       $form['test_mode'] = [

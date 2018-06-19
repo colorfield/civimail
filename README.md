@@ -14,7 +14,6 @@ that are eligible to send and receive the mail.
 - The CiviMail feature is available as a node local task 
 (while viewing or editing a node from a CiviMail enabled content type). 
 
-
 ### Dependencies
 
 [CiviCRM Core](https://github.com/civicrm/civicrm-core),

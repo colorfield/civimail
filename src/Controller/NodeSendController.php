@@ -104,12 +104,12 @@ class NodeSendController extends ControllerBase {
       $mailing['mailing']['created_date']
     );
     $timeStamp = $dateTime->getTimestamp();
-    // @todo filter by group id's.
-    $filter = [];
-    $groups = \Drupal::service('civicrm_tools.api')->get('Group', $filter);
     $groupLabels = [];
-    foreach ($groups as $groupId => $group) {
-      if (in_array($groupId, $mailing['groups'])) {
+    /** @var \Drupal\civicrm_tools\CiviCrmGroupInterface $groupApi */
+    $groupApi = \Drupal::service('civicrm_tools.group');
+    foreach ($mailing['groups'] as $groupId) {
+      $group = $groupApi->getGroup($groupId);
+      if(!empty($group)) {
         $groupLabels[] = $group['title'];
       }
     }
