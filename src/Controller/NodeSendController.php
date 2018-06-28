@@ -109,7 +109,7 @@ class NodeSendController extends ControllerBase {
     $groupApi = \Drupal::service('civicrm_tools.group');
     foreach ($mailing['groups'] as $groupId) {
       $group = $groupApi->getGroup($groupId);
-      if(!empty($group)) {
+      if (!empty($group)) {
         $groupLabels[] = $group['title'];
       }
     }
