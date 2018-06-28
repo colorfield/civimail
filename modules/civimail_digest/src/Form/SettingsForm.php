@@ -173,7 +173,12 @@ class SettingsForm extends ConfigFormBase {
       '#description' => $this->t('When checked, digests will be mailed automatically on the selected day and hour, each week.'),
       '#default_value' => $config->get('is_active'),
     ];
-    $form['week_day'] = [
+
+    $form['schedule'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Schedule'),
+    ];
+    $form['schedule']['week_day'] = [
       '#type' => 'select',
       '#title' => $this->t('Week day'),
       '#description' => $this->t('Day to send the weekly digest.'),
@@ -181,7 +186,7 @@ class SettingsForm extends ConfigFormBase {
       '#required' => TRUE,
       '#default_value' => $config->get('week_day'),
     ];
-    $form['hour'] = [
+    $form['schedule']['hour'] = [
       '#type' => 'select',
       '#title' => $this->t('Hour'),
       '#description' => $this->t('Hour to send the weekly digest.'),
@@ -189,14 +194,19 @@ class SettingsForm extends ConfigFormBase {
       '#required' => TRUE,
       '#default_value' => $config->get('hour'),
     ];
-    $form['entity_limit'] = [
+
+    $form['limit'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Limit'),
+    ];
+    $form['limit']['entity_limit'] = [
       '#type' => 'number',
       '#title' => $this->t('Entity limit'),
       '#description' => $this->t('Limit entities that will be included in a single digest.'),
       '#required' => TRUE,
       '#default_value' => $config->get('entity_limit'),
     ];
-    $form['bundles'] = [
+    $form['limit']['bundles'] = [
       '#type' => 'select',
       '#title' => $this->t('Bundles'),
       '#description' => $this->t('Optionally limit bundles that can be part of the digest. All apply if none selected.'),
@@ -205,7 +215,21 @@ class SettingsForm extends ConfigFormBase {
       '#required' => TRUE,
       '#default_value' => $config->get('bundles'),
     ];
-    $form['from_contact'] = [
+
+    $form['contact'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Contact'),
+    ];
+    $form['contact']['from_contact_groups'] = [
+      '#type' => 'select',
+      '#title' => $this->t('From contact groups'),
+      '#description' => $this->t('Select a group for the from contat first'),
+      '#options' => $this->getGroups(),
+      '#multiple' => TRUE,
+      '#required' => TRUE,
+      '#default_value' => $config->get('from_contact_groups'),
+    ];
+    $form['contact']['from_contact'] = [
       '#type' => 'select',
       '#title' => $this->t('From contact'),
       '#description' => $this->t('Contact that will be used as the sender.'),
@@ -214,7 +238,7 @@ class SettingsForm extends ConfigFormBase {
       '#required' => TRUE,
       '#default_value' => $config->get('from_contact'),
     ];
-    $form['to_groups'] = [
+    $form['contact']['to_groups'] = [
       '#type' => 'select',
       '#title' => $this->t('To groups'),
       '#description' => $this->t('CiviCRM groups that will receive the digest.'),
@@ -223,7 +247,7 @@ class SettingsForm extends ConfigFormBase {
       '#required' => TRUE,
       '#default_value' => $config->get('to_groups'),
     ];
-    $form['test_groups'] = [
+    $form['contact']['test_groups'] = [
       '#type' => 'select',
       '#title' => $this->t('Test groups'),
       '#description' => $this->t('CiviCRM groups that will receive tests.'),
@@ -231,7 +255,7 @@ class SettingsForm extends ConfigFormBase {
       '#multiple' => TRUE,
       '#default_value' => $config->get('test_groups'),
     ];
-    $form['validation_contacts'] = [
+    $form['contact']['validation_contacts'] = [
       '#type' => 'select',
       '#title' => $this->t('Validation contacts'),
       '#description' => $this->t('CiviCRM contacts that will confirm that the digest can be sent.'),
