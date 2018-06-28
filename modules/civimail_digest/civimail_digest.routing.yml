@@ -1,0 +1,9 @@
+civimail_digest.settings:
+  path: '/admin/config/civimail_digest/settings'
+  defaults:
+    _form: '\Drupal\civimail_digest\Form\SettingsForm'
+    _title: 'CiviMail Digest'
+  requirements:
+    _permission: 'administer civimail'
+  options:
+    _admin_route: TRUE
