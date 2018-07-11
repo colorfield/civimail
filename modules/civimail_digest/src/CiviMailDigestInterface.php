@@ -8,7 +8,7 @@ namespace Drupal\civimail_digest;
 interface CiviMailDigestInterface {
 
   /**
-   * Checks if the digest has content ready to be sent.
+   * Checks if the digest to be prepared has content.
    *
    * @return bool
    *   The content status for the digest.
@@ -18,13 +18,53 @@ interface CiviMailDigestInterface {
   /**
    * Collects the nodes that must be part of the digest.
    *
+   * As a side effect, it assigns the node a digest id.
+   *
    * @return int
    *   Digest id.
    */
   public function prepareDigest();
 
   /**
-   * Sends the digest.
+   * Gets the digests with their status.
+   *
+   * @return array
+   *   List of digests.
+   */
+  public function getDigests();
+
+  /**
+   * Previews the digest.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   *
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   Digest preview.
+   */
+  public function previewDigest($digest_id);
+
+  /**
+   * Notifies the validator groups if a new digest is ready.
+   *
+   * @return bool
+   *   Status of the notification.
+   */
+  public function notifyValidators();
+
+  /**
+   * Sends a test digest to the configured test groups.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   *
+   * @return bool
+   *   Digest send status.
+   */
+  public function sendTestDigest($digest_id);
+
+  /**
+   * Sends the digest to the configured groups.
    *
    * @param int $digest_id
    *   Digest id.

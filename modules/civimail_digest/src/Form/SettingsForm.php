@@ -206,16 +206,18 @@ class SettingsForm extends ConfigFormBase {
 
     $availableGroups = $this->getGroups();
 
-    if(!empty($form_state->getValue('from_group'))) {
+    if (!empty($form_state->getValue('from_group'))) {
       $fromGroup = $form_state->getValue('from_group');
-    }else {
+    }
+    else {
       $fromGroup = $config->get('from_group');
     }
     $fromContacts = $this->getContacts([$fromGroup]);
 
-    if(!empty($form_state->getValue('validation_groups'))) {
+    if (!empty($form_state->getValue('validation_groups'))) {
       $validationGroups = $form_state->getValue('validation_groups');
-    }else {
+    }
+    else {
       $validationGroups = $config->get('validation_groups');
     }
     // @todo multiple validation groups
@@ -233,7 +235,7 @@ class SettingsForm extends ConfigFormBase {
     $form['is_active'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Is active'),
-      '#description' => $this->t('When checked, digests will be mailed automatically on the selected day and hour, each week.'),
+      '#description' => $this->t('When checked, digests of the content that was previously sent via CiviMail will be created automatically on the selected day and hour, each week.'),
       '#default_value' => $config->get('is_active'),
     ];
 
@@ -278,6 +280,12 @@ class SettingsForm extends ConfigFormBase {
       '#required' => TRUE,
       '#default_value' => $config->get('bundles'),
     ];
+    $form['limit']['include_update'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Include CiviMail updates'),
+      '#description' => $this->t('If checked, when several mails have been sent for the same content it will also include the last one.'),
+      '#default_value' => $config->get('include_update'),
+    ];
 
     $form['contact'] = [
       '#type' => 'fieldset',
@@ -319,7 +327,8 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $availableGroups[$config->get('from_group')] . ' ' . $this->t('from contact'),
       '#description' => $this->t('Contact that will be used as the sender.'),
       '#options' => $fromContacts,
-      '#default_value' => $config->get('from_contact'),  // @todo validate on group change
+    // @todo validate on group change
+      '#default_value' => $config->get('from_contact'),
       '#required' => TRUE,
     ];
 
@@ -353,7 +362,8 @@ class SettingsForm extends ConfigFormBase {
         'wrapper' => 'validation-contacts-container',
         'event' => 'change',
       ],
-      '#multiple' => FALSE, // @todo open to multiple groups
+      // @todo open to multiple groups
+      '#multiple' => FALSE,
       '#required' => TRUE,
     ];
     // JS fallback to trigger a form rebuild.
@@ -377,7 +387,8 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('Validation contacts'),
       '#description' => $this->t('CiviCRM contacts that will confirm that the digest can be sent.'),
       '#options' => $validationContacts,
-      '#default_value' => $config->get('validation_contacts'), // @todo validate on group change
+    // @todo validate on group change
+      '#default_value' => $config->get('validation_contacts'),
       '#multiple' => TRUE,
       '#required' => TRUE,
     ];
@@ -411,6 +422,7 @@ class SettingsForm extends ConfigFormBase {
         ->set('hour', $form_state->getValue('hour'))
         ->set('entity_limit', $form_state->getValue('entity_limit'))
         ->set('bundles', $form_state->getValue('bundles'))
+        ->set('include_update', $form_state->getValue('include_update'))
         ->set('from_group', $form_state->getValue('from_group'))
         ->set('from_contact', $form_state->getValue('from_contact'))
         ->set('to_groups', $form_state->getValue('to_groups'))
