@@ -223,6 +223,11 @@ class SettingsForm extends ConfigFormBase {
     // @todo multiple validation groups
     $validationContacts = $this->getContacts([$validationGroups]);
 
+    // @todo dependency injection
+    $entityDisplayRepository = \Drupal::service('entity_display.repository');
+    // @todo extend to other content entities
+    $viewModes = $entityDisplayRepository->getViewModeOptions('node');
+
     $form['digest_title'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Digest title'),
@@ -242,6 +247,11 @@ class SettingsForm extends ConfigFormBase {
     $form['schedule'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Schedule'),
+      '#states' => [
+        'visible' => [
+          ':input[name="is_active"]' => ['checked' => TRUE],
+        ],
+      ],
     ];
     $form['schedule']['week_day'] = [
       '#type' => 'select',
@@ -260,9 +270,31 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('hour'),
     ];
 
+    $form['display'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Display'),
+      '#states' => [
+        'visible' => [
+          ':input[name="is_active"]' => ['checked' => TRUE],
+        ],
+      ],
+    ];
+    $form['display']['view_mode'] = [
+      '#type' => 'select',
+      '#title' => t('Content view mode'),
+      '#options' => $viewModes,
+      '#description' => $this->t('View mode that will be used by the digest for each content excerpt.'),
+      '#default_value' => $config->get('view_mode'),
+    ];
+
     $form['limit'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Limit'),
+      '#states' => [
+        'visible' => [
+          ':input[name="is_active"]' => ['checked' => TRUE],
+        ],
+      ],
     ];
     $form['limit']['entity_limit'] = [
       '#type' => 'number',
@@ -283,13 +315,25 @@ class SettingsForm extends ConfigFormBase {
     $form['limit']['include_update'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Include CiviMail updates'),
-      '#description' => $this->t('If checked, when several mails have been sent for the same content it will also include the last one.'),
+      '#description' => $this->t('If checked, when several mailings have been sent for the same content it will also include the last one, even if the content has already been included in a previous mailing.'),
       '#default_value' => $config->get('include_update'),
+    ];
+    $form['limit']['age_in_days'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Days'),
+      '#description' => $this->t('Do not include content older than the defined days.'),
+      '#required' => TRUE,
+      '#default_value' => $config->get('age_in_days'),
     ];
 
     $form['contact'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Contact'),
+      '#states' => [
+        'visible' => [
+          ':input[name="is_active"]' => ['checked' => TRUE],
+        ],
+      ],
     ];
 
     // From group and contact dependent select elements.
@@ -420,9 +464,11 @@ class SettingsForm extends ConfigFormBase {
         ->set('is_active', $form_state->getValue('is_active'))
         ->set('week_day', $form_state->getValue('week_day'))
         ->set('hour', $form_state->getValue('hour'))
+        ->set('view_mode', $form_state->getValue('view_mode'))
         ->set('entity_limit', $form_state->getValue('entity_limit'))
         ->set('bundles', $form_state->getValue('bundles'))
         ->set('include_update', $form_state->getValue('include_update'))
+        ->set('age_in_days', $form_state->getValue('age_in_days'))
         ->set('from_group', $form_state->getValue('from_group'))
         ->set('from_contact', $form_state->getValue('from_contact'))
         ->set('to_groups', $form_state->getValue('to_groups'))

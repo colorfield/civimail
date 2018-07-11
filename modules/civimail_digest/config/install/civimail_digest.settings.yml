@@ -3,3 +3,4 @@ civimail_digest:
   week_day: 2
   hour: 8
   entity_limit: 10
+  age_in_days: 7
