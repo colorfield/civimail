@@ -2,12 +2,13 @@
 
 namespace Drupal\civimail_digest\Form;
 
+use Drupal\civicrm_tools\CiviCrmGroupInterface;
+use Drupal\civicrm_tools\CiviCrmContactInterface;
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\civicrm_tools\CiviCrmGroupInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 
 /**
@@ -23,6 +24,13 @@ class SettingsForm extends ConfigFormBase {
   protected $civicrmToolsGroup;
 
   /**
+   * Drupal\civicrm_tools\CiviCrmContactInterface definition.
+   *
+   * @var \Drupal\civicrm_tools\CiviCrmContactInterface
+   */
+  protected $civicrmToolsContact;
+
+  /**
    * Drupal\Core\Entity\EntityTypeManagerInterface definition.
    *
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
@@ -35,10 +43,12 @@ class SettingsForm extends ConfigFormBase {
   public function __construct(
     ConfigFactoryInterface $config_factory,
     CiviCrmGroupInterface $civicrm_tools_group,
+    CiviCrmContactInterface $civicrm_tools_contact,
     EntityTypeManagerInterface $entity_type_manager
     ) {
     parent::__construct($config_factory);
     $this->civicrmToolsGroup = $civicrm_tools_group;
+    $this->civicrmToolsContact = $civicrm_tools_contact;
     $this->entityTypeManager = $entity_type_manager;
   }
 
@@ -49,6 +59,7 @@ class SettingsForm extends ConfigFormBase {
     return new static(
       $container->get('config.factory'),
       $container->get('civicrm_tools.group'),
+      $container->get('civicrm_tools.contact'),
       $container->get('entity_type.manager')
     );
   }
@@ -135,15 +146,34 @@ class SettingsForm extends ConfigFormBase {
   /**
    * Returns a list of contacts for a group, to be used as select options.
    *
-   * @param int $group_id
-   *   CiviCRM group id.
+   * @param array $groups
+   *   CiviCRM array of group ids.
    *
    * @return array
    *   List of CiviCRM contacts.
    */
-  private function getContacts($group_id) {
+  private function getContacts(array $groups) {
     $result = [];
+    $contacts = $this->civicrmToolsContact->getFromGroups($groups);
+    foreach ($contacts as $key => $contact) {
+      $result[$key] = $contact['first_name'] . ' ' . $contact['last_name'];
+    }
     return $result;
+  }
+
+  /**
+   * Ajax callback for the 'from contact group' selection.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   *
+   * @return array
+   *   The portion of the render structure that will replace the form element.
+   */
+  public function fromContactCallback(array $form, FormStateInterface $form_state) {
+    return $form['contact']['from_contact_container'];
   }
 
   /**
@@ -158,6 +188,17 @@ class SettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('civimail_digest.settings');
+
+    $availableGroups = $this->getGroups();
+    if (empty($form_state->getValue('from_group'))) {
+      // Use a default value.
+      $selectedFromGroup = key($availableGroups);
+    }
+    else {
+      // Get the value if it already exists.
+      $selectedFromGroup = $form_state->getValue('from_group');
+    }
+
     $form['digest_title'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Digest title'),
@@ -220,24 +261,46 @@ class SettingsForm extends ConfigFormBase {
       '#type' => 'fieldset',
       '#title' => $this->t('Contact'),
     ];
-    $form['contact']['from_contact_groups'] = [
+
+    // From group and contact dependent select elements.
+    $form['contact']['from_group'] = [
       '#type' => 'select',
       '#title' => $this->t('From contact groups'),
-      '#description' => $this->t('Select a group for the from contat first'),
-      '#options' => $this->getGroups(),
-      '#multiple' => TRUE,
+      '#description' => $this->t('Set a group that will be used to filter the from contact.'),
+      '#options' => $availableGroups,
+      '#default_value' => $selectedFromGroup,
+      '#ajax' => [
+        'callback' => '::fromContactCallback',
+        'wrapper' => 'from-contact-container',
+        'event' => 'change',
+      ],
       '#required' => TRUE,
-      '#default_value' => $config->get('from_contact_groups'),
     ];
-    $form['contact']['from_contact'] = [
+    // JS fallback to trigger a form rebuild.
+    $form['contact']['choose_from_group'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Choose from contact group'),
+      '#states' => [
+        'visible' => ['body' => ['value' => TRUE]],
+      ],
+    ];
+    $form['contact']['from_contact_container'] = [
+      '#type' => 'container',
+      '#attributes' => ['id' => 'from-contact-container'],
+    ];
+    $form['contact']['from_contact_container']['from_contact_fieldset'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Choose a contact'),
+    ];
+    $form['contact']['from_contact_container']['from_contact_fieldset']['from_contact'] = [
       '#type' => 'select',
-      '#title' => $this->t('From contact'),
+      '#title' => $availableGroups[$selectedFromGroup] . ' ' . $this->t('from contact'),
       '#description' => $this->t('Contact that will be used as the sender.'),
-    // @todo
-      '#options' => [],
+      '#options' => $this->getContacts([$selectedFromGroup]),
+      '#default_value' => !empty($form_state->getValue('from_contact')) ? $form_state->getValue('from_contact') : '',
       '#required' => TRUE,
-      '#default_value' => $config->get('from_contact'),
     ];
+
     $form['contact']['to_groups'] = [
       '#type' => 'select',
       '#title' => $this->t('To groups'),
@@ -255,16 +318,34 @@ class SettingsForm extends ConfigFormBase {
       '#multiple' => TRUE,
       '#default_value' => $config->get('test_groups'),
     ];
+
+    // Validation groups and contacts dependent select elements.
+    $form['contact']['validation_groups'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Validation contact groups'),
+      '#description' => $this->t('Set one or multiple groups that will be used to filter the validation contacts.'),
+      '#options' => $this->getGroups(),
+      '#multiple' => TRUE,
+      '#required' => TRUE,
+      '#default_value' => $config->get('validation_groups'),
+    ];
     $form['contact']['validation_contacts'] = [
       '#type' => 'select',
       '#title' => $this->t('Validation contacts'),
       '#description' => $this->t('CiviCRM contacts that will confirm that the digest can be sent.'),
-    // @todo
       '#options' => [],
       '#multiple' => TRUE,
       '#required' => TRUE,
       '#default_value' => $config->get('validation_contacts'),
     ];
+
+    // If no group is selected give a hint to the user
+    // that it must be selected first.
+    if (empty($selectedFromGroup)) {
+      $form['contact']['from_contact_container']['from_contact_fieldset']['from_contact']['#title'] = $this->t('You must choose the from group contact first.');
+      $form['contact']['from_contact_container']['from_contact_fieldset']['from_contact']['#disabled'] = TRUE;
+    }
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -272,20 +353,28 @@ class SettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    parent::submitForm($form, $form_state);
-
-    $this->config('civimail_digest.settings')
-      ->set('digest_title', $form_state->getValue('digest_title'))
-      ->set('is_active', $form_state->getValue('is_active'))
-      ->set('week_day', $form_state->getValue('week_day'))
-      ->set('hour', $form_state->getValue('hour'))
-      ->set('entity_limit', $form_state->getValue('entity_limit'))
-      ->set('bundles', $form_state->getValue('bundles'))
-      ->set('from_contact', $form_state->getValue('from_contact'))
-      ->set('to_groups', $form_state->getValue('to_groups'))
-      ->set('test_groups', $form_state->getValue('test_groups'))
-      ->set('validation_contacts', $form_state->getValue('validation_contacts'))
-      ->save();
+    // Make the distinction between plain form submit and ajax trigger.
+    $trigger = (string) $form_state->getTriggeringElement()['#value'];
+    if ($trigger == 'Save configuration') {
+      parent::submitForm($form, $form_state);
+      $this->config('civimail_digest.settings')
+        ->set('digest_title', $form_state->getValue('digest_title'))
+        ->set('is_active', $form_state->getValue('is_active'))
+        ->set('week_day', $form_state->getValue('week_day'))
+        ->set('hour', $form_state->getValue('hour'))
+        ->set('entity_limit', $form_state->getValue('entity_limit'))
+        ->set('bundles', $form_state->getValue('bundles'))
+        ->set('from_group', $form_state->getValue('from_group'))
+        ->set('from_contact', $form_state->getValue('from_contact'))
+        ->set('to_groups', $form_state->getValue('to_groups'))
+        ->set('test_groups', $form_state->getValue('test_groups'))
+        ->set('validation_groups', $form_state->getValue('validation_groups'))
+        ->set('validation_contacts', $form_state->getValue('validation_contacts'))
+        ->save();
+    }
+    else {
+      $form_state->setRebuild();
+    }
   }
 
 }
