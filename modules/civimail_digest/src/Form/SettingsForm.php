@@ -177,6 +177,21 @@ class SettingsForm extends ConfigFormBase {
   }
 
   /**
+   * Ajax callback for the 'validation contacts groups' selection.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   *
+   * @return array
+   *   The portion of the render structure that will replace the form element.
+   */
+  public function validationContactsCallback(array $form, FormStateInterface $form_state) {
+    return $form['contact']['validation_contacts_container'];
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function getFormId() {
@@ -190,14 +205,21 @@ class SettingsForm extends ConfigFormBase {
     $config = $this->config('civimail_digest.settings');
 
     $availableGroups = $this->getGroups();
-    if (empty($form_state->getValue('from_group'))) {
-      // Use a default value.
-      $selectedFromGroup = key($availableGroups);
+
+    if(!empty($form_state->getValue('from_group'))) {
+      $fromGroup = $form_state->getValue('from_group');
+    }else {
+      $fromGroup = $config->get('from_group');
     }
-    else {
-      // Get the value if it already exists.
-      $selectedFromGroup = $form_state->getValue('from_group');
+    $fromContacts = $this->getContacts([$fromGroup]);
+
+    if(!empty($form_state->getValue('validation_groups'))) {
+      $validationGroups = $form_state->getValue('validation_groups');
+    }else {
+      $validationGroups = $config->get('validation_groups');
     }
+    // @todo multiple validation groups
+    $validationContacts = $this->getContacts([$validationGroups]);
 
     $form['digest_title'] = [
       '#type' => 'textfield',
@@ -268,7 +290,7 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('From contact groups'),
       '#description' => $this->t('Set a group that will be used to filter the from contact.'),
       '#options' => $availableGroups,
-      '#default_value' => $selectedFromGroup,
+      '#default_value' => $fromGroup,
       '#ajax' => [
         'callback' => '::fromContactCallback',
         'wrapper' => 'from-contact-container',
@@ -294,10 +316,10 @@ class SettingsForm extends ConfigFormBase {
     ];
     $form['contact']['from_contact_container']['from_contact_fieldset']['from_contact'] = [
       '#type' => 'select',
-      '#title' => $availableGroups[$selectedFromGroup] . ' ' . $this->t('from contact'),
+      '#title' => $availableGroups[$config->get('from_group')] . ' ' . $this->t('from contact'),
       '#description' => $this->t('Contact that will be used as the sender.'),
-      '#options' => $this->getContacts([$selectedFromGroup]),
-      '#default_value' => !empty($form_state->getValue('from_contact')) ? $form_state->getValue('from_contact') : '',
+      '#options' => $fromContacts,
+      '#default_value' => $config->get('from_contact'),  // @todo validate on group change
       '#required' => TRUE,
     ];
 
@@ -324,26 +346,51 @@ class SettingsForm extends ConfigFormBase {
       '#type' => 'select',
       '#title' => $this->t('Validation contact groups'),
       '#description' => $this->t('Set one or multiple groups that will be used to filter the validation contacts.'),
-      '#options' => $this->getGroups(),
-      '#multiple' => TRUE,
+      '#options' => $availableGroups,
+      '#default_value' => $validationGroups,
+      '#ajax' => [
+        'callback' => '::validationContactsCallback',
+        'wrapper' => 'validation-contacts-container',
+        'event' => 'change',
+      ],
+      '#multiple' => FALSE, // @todo open to multiple groups
       '#required' => TRUE,
-      '#default_value' => $config->get('validation_groups'),
     ];
-    $form['contact']['validation_contacts'] = [
+    // JS fallback to trigger a form rebuild.
+    $form['contact']['choose_validation_group'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Choose validation contact group'),
+      '#states' => [
+        'visible' => ['body' => ['value' => TRUE]],
+      ],
+    ];
+    $form['contact']['validation_contacts_container'] = [
+      '#type' => 'container',
+      '#attributes' => ['id' => 'validation-contacts-container'],
+    ];
+    $form['contact']['validation_contacts_container']['validation_contacts_fieldset'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Choose at least one contact'),
+    ];
+    $form['contact']['validation_contacts_container']['validation_contacts_fieldset']['validation_contacts'] = [
       '#type' => 'select',
       '#title' => $this->t('Validation contacts'),
       '#description' => $this->t('CiviCRM contacts that will confirm that the digest can be sent.'),
-      '#options' => [],
+      '#options' => $validationContacts,
+      '#default_value' => $config->get('validation_contacts'), // @todo validate on group change
       '#multiple' => TRUE,
       '#required' => TRUE,
-      '#default_value' => $config->get('validation_contacts'),
     ];
 
-    // If no group is selected give a hint to the user
+    // If no group is selected for a contact give a hint to the user
     // that it must be selected first.
-    if (empty($selectedFromGroup)) {
-      $form['contact']['from_contact_container']['from_contact_fieldset']['from_contact']['#title'] = $this->t('You must choose the from group contact first.');
+    if (empty($config->get('from_group')) && empty($form_state->getValue('from_group'))) {
+      $form['contact']['from_contact_container']['from_contact_fieldset']['from_contact']['#title'] = $this->t('You must choose the from group first.');
       $form['contact']['from_contact_container']['from_contact_fieldset']['from_contact']['#disabled'] = TRUE;
+    }
+    if (empty($config->get('validation_groups')) && empty($form_state->getValue('validation_groups'))) {
+      $form['contact']['validation_contacts_container']['validation_contacts_fieldset']['validation_contacts']['#title'] = $this->t('You must choose the validation group first.');
+      $form['contact']['validation_contacts_container']['validation_contacts_fieldset']['validation_contacts']['#disabled'] = TRUE;
     }
 
     return parent::buildForm($form, $form_state);
