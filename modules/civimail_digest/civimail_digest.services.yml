@@ -1,4 +1,4 @@
 services:
   civimail_digest:
     class: Drupal\civimail_digest\CiviMailDigest
-    arguments: ['@database', '@civicrm_tools.api', '@entity_type.manager']
+    arguments: ['@database', '@civicrm_tools.api', '@entity_type.manager', '@config.factory']

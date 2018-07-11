@@ -2,7 +2,27 @@ civimail_digest.settings:
   path: '/admin/config/civimail_digest/settings'
   defaults:
     _form: '\Drupal\civimail_digest\Form\SettingsForm'
-    _title: 'CiviMail Digest'
+    _title: 'CiviMail Digest configuration'
+  requirements:
+    _permission: 'administer civimail'
+  options:
+    _admin_route: TRUE
+
+civimail_digest.digest_list:
+  path: '/admin/civimail_digest/digests'
+  defaults:
+    _controller: '\Drupal\civimail_digest\Controller\DigestListController::digests'
+    _title: 'CiviMail Digests'
+  requirements:
+    _permission: 'administer civimail'
+  options:
+    _admin_route: TRUE
+
+civimail_digest.prepare:
+  path: '/admin/civimail_digest/prepare'
+  defaults:
+    _controller: '\Drupal\civimail_digest\Controller\DigestListController::prepare' # @todo dedicated controller
+    _title: 'CiviMail Digests'
   requirements:
     _permission: 'administer civimail'
   options:

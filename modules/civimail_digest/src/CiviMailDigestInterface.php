@@ -18,7 +18,8 @@ interface CiviMailDigestInterface {
   /**
    * Collects the nodes that must be part of the digest.
    *
-   * As a side effect, it assigns the node a digest id.
+   * As a side effect, it assigns a digest id to each content entity
+   * based on the limitations.
    *
    * @return int
    *   Digest id.
