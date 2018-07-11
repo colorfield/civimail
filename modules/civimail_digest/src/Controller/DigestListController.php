@@ -126,13 +126,13 @@ class DigestListController extends ControllerBase {
     $items = [];
 
     $configureUrl = Url::fromRoute('civimail_digest.settings');
-    $configureLink = Link::fromTextAndUrl(t('Configure'), $configureUrl);
+    $configureLink = Link::fromTextAndUrl($this->t('Configure'), $configureUrl);
     $configureLink = $configureLink->toRenderable();
     $items[] = render($configureLink);
 
     // @todo
     $prepareUrl = Url::fromRoute('civimail_digest.prepare');
-    $prepareLink = Link::fromTextAndUrl(t("Prepare digest"), $prepareUrl);
+    $prepareLink = Link::fromTextAndUrl($this->t("Prepare digest"), $prepareUrl);
     $prepareLink = $prepareLink->toRenderable();
     $prepareLink['#attributes'] = [
       'class' => ['button', 'button-action', 'button--primary', 'button--small'],

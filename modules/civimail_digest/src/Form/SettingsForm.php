@@ -240,7 +240,7 @@ class SettingsForm extends ConfigFormBase {
     $form['is_active'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Is active'),
-      '#description' => $this->t('When checked, digests of the content that was previously sent via CiviMail will be created automatically on the selected day and hour, each week.'),
+      '#description' => $this->t('When checked, digests of the content that was previously sent via CiviMail will be prepared automatically on the selected day and hour, each week.'),
       '#default_value' => $config->get('is_active'),
     ];
 
