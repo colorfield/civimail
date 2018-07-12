@@ -7,6 +7,8 @@ use Drupal\Core\Database\Driver\mysql\Connection;
 use Drupal\civicrm_tools\CiviCrmApiInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -197,15 +199,73 @@ class CiviMailDigest implements CiviMailDigestInterface {
    *
    * @param array $entities
    *   List of rendered entities.
+   * @param int $digest_id
+   *   Digest id.
    *
    * @return array
    *   Render array of the digest.
    */
-  private function buildDigest(array $entities) {
+  private function buildDigest(array $entities, $digest_id = NULL) {
+    // @todo add text
+    // @todo refactor CiviMail service
+    $currentId = $digest_id;
+    if(is_null($digest_id)) {
+      // @todo get it by incrementing the last digest id.
+      $currentId = 0;
+    }
     return [
       '#theme' => 'civimail_digest_html',
       '#entities' => $entities,
+      '#digest_title' => $this->getDigestTitle($currentId),
+      // Use CiviCRM token.
+      '#civicrm_unsubscribe_url' => '{action.unsubscribeUrl}',
+      // Allows template overrides to load assets provided by the current theme
+      // with {{ base_path ~ directory }}.
+      '#base_path' => \Drupal::request()->getSchemeAndHttpHost() . '/',
+      '#absolute_link' => $this->getAbsoluteDigestLink($currentId),
     ];
+  }
+
+  /**
+   * Returns the digest title.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   *
+   * @return string
+   *   Digest title.
+   */
+  private function getDigestTitle($digest_id = NULL) {
+    $config = $this->configFactory->get('civimail_digest.settings');
+    return $config->get('digest_title') . ' ' . $digest_id;
+  }
+
+  /**
+   * Returns the absolute digest url.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   *
+   * @return \Drupal\Core\Url
+   *   Digest url.
+   */
+  private function getAbsoluteDigestUrl($digest_id) {
+    return Url::fromRoute('civimail_digest.view', ['digest_id' => $digest_id])->setAbsolute();
+  }
+
+  /**
+   * Returns an absolute link to a digest view.
+   *
+   * @param $digest_id
+   *   Digest id.
+   *
+   * @return array|\Drupal\Core\Link
+   *   Absolute link to the digest.
+   */
+  private function getAbsoluteDigestLink($digest_id) {
+    $link = Link::fromTextAndUrl(t('View it online'), $this->getAbsoluteDigestUrl($digest_id));
+    $link = $link->toRenderable();
+    return $link;
   }
 
   /**

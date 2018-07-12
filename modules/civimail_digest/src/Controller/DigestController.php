@@ -68,10 +68,14 @@ class DigestController extends ControllerBase {
       ],
       'view' => [
         'data' => $this->t('View'),
-        'class' => [RESPONSIVE_PRIORITY_MEDIUM],
+        'class' => [RESPONSIVE_PRIORITY_LOW],
       ],
       'send' => [
         'data' => $this->t('Send'),
+        'class' => [RESPONSIVE_PRIORITY_MEDIUM],
+      ],
+      'groups' => [
+        'data' => $this->t('Groups'),
         'class' => [RESPONSIVE_PRIORITY_MEDIUM],
       ],
     ];
@@ -97,6 +101,8 @@ class DigestController extends ControllerBase {
       'view' => '',
     // Send action or sent date.
       'send' => '',
+    // CiviCRM groups that received the digest.
+      'groups' => '',
     ];
     return $result;
   }

@@ -120,6 +120,7 @@ class CiviMail implements CiviMailInterface {
       '#civicrm_header' => NULL,
     // @todo
       '#civicrm_footer' => NULL,
+      // Use CiviCRM token.
       '#civicrm_unsubscribe_url' => '{action.unsubscribeUrl}',
     ];
     return $build;
@@ -140,6 +141,7 @@ class CiviMail implements CiviMailInterface {
       '#civicrm_header' => NULL,
     // @todo
       '#civicrm_footer' => NULL,
+      // Use CiviCRM token.
       '#civicrm_unsubscribe_url' => '{action.unsubscribeUrl}',
     ];
     return $build;

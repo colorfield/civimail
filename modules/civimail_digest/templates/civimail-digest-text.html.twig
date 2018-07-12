@@ -3,18 +3,30 @@
  * @file
  * Default theme implementation for CiviMail digest text mail.
  * Variables:
+ * - base_path : The absolute URL, with a trailing slash.
+ *   Allows template overrides to load assets provided by the current theme
+ *   with {{ base_path ~ directory }}
+ * - entities: An array
  * - is_test : A boolean indicating that the mail is used in test mode.
- * @todo documentation
+ * - digest_title
+ * - absolute_link
+ * - translation_links
+ * - civicrm_unsubscribe_url
+ * @todo add documentation
 #}
 
 {% if civicrm_header %}
   {{ civicrm_header }}
 {% endif %}
 
-{% trans %}View it online {{ absolute_url }}{% endtrans %}
+{{ absolute_link }}
 
-{% if translation_urls %}
-{% trans %}View in other languages {{ translation_urls }}{% endtrans %}
+{% if translation_links %}
+  {% trans %}View in other languages {{ translation_links }}{% endtrans %}
+{% endif %}
+
+{% if digest_title %}
+  <h1>{{ digest_title }}</h1>
 {% endif %}
 
 {% for entity in entities %}
@@ -26,5 +38,5 @@
 {% endif %}
 
 {% if civicrm_unsubscribe_url %}
-{% trans %}Unsubscribe {{ civicrm_unsubscribe_url }}{% endtrans %}
+  {% trans %}Unsubscribe {{ civicrm_unsubscribe_url }}{% endtrans %}
 {% endif %}

@@ -3,8 +3,15 @@
  * @file
  * Default theme implementation for CiviMail text mail.
  * Variables:
+ * - base_path : The absolute URL, with a trailing slash.
+ *   Allows template overrides to load assets provided by the current theme
+ *   with {{ base_path ~ directory }}
  * - is_test : A boolean indicating that the mail is used in test mode.
- * @todo documentation
+ * - absolute_link
+ * - translation_links
+ * - entity_view
+ * - civicrm_unsubscribe_url
+ * @todo add documentation
 #}
 
 {% if civicrm_header %}
@@ -24,5 +31,5 @@
 {% endif %}
 
 {% if civicrm_unsubscribe_url %}
-{% trans %}Unsubscribe {{ civicrm_unsubscribe_url }}{% endtrans %}
+  {% trans %}Unsubscribe {{ civicrm_unsubscribe_url }}{% endtrans %}
 {% endif %}

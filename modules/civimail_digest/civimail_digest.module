@@ -31,6 +31,7 @@ function civimail_digest_theme() {
     // @todo set template suggestions
     'civimail_digest_html' => [
       'variables' => [
+        'digest_title' => NULL,
         'entities' => NULL,
         'base_path' => NULL,
         'absolute_link' => NULL,
@@ -44,6 +45,7 @@ function civimail_digest_theme() {
     ],
     'civimail_digest_text' => [
       'variables' => [
+        'digest_title' => NULL,
         'entities' => NULL,
         'absolute_url' => NULL,
         'translation_urls' => NULL,
