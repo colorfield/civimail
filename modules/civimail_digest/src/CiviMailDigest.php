@@ -55,6 +55,13 @@ class CiviMailDigest implements CiviMailDigestInterface {
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public function hasNextDigestContent() {
+    return !empty($this->prepareDigestContent());
+  }
+
+  /**
    * Get the content entities keys that are candidates for a digest.
    *
    * These candidates are evaluated from CiviMail mailings that were
@@ -63,7 +70,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * @return array
    *   Content entities result from the {civimail_entity_mailing} table.
    */
-  private function getDigestContent() {
+  private function prepareDigestContent() {
     $result = [];
     $config = $this->configFactory->get('civimail_digest.settings');
     if ($config->get('is_active')) {
@@ -139,27 +146,68 @@ class CiviMailDigest implements CiviMailDigestInterface {
   }
 
   /**
-   * {@inheritdoc}
+   * Get the content entities keys that are candidates for a digest.
+   *
+   * These candidates are evaluated from CiviMail mailings that were
+   * previously sent and the configured limitations.
+   *
+   * @return array
+   *   Content entities result from the {civimail_entity_mailing} table.
    */
-  public function hasDigestContent() {
-    return !empty($this->getDigestContent());
+  private function getDigestContent($digest_id) {
+    $result = [];
+    return $result;
   }
 
   /**
    * {@inheritdoc}
    */
   public function previewDigest() {
-    $content = $this->getDigestContent();
+    $content = $this->prepareDigestContent();
+    $digest = [];
     if (!empty($content)) {
       $entities = $this->getDigestEntities($content);
       $digest = $this->buildDigest($entities);
     }
+    return $this->getDigestAsResponse($digest);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function viewDigest($digest_id) {
+    $content = $this->getDigestContent($digest_id);
+    $digest = [];
+    if (!empty($content)) {
+      $entities = $this->getDigestEntities($content);
+      $digest = $this->buildDigest($entities);
+    }
+    return $this->getDigestAsResponse($digest);
+  }
+
+  /**
+   * Renders a digest and wrap it into a Response.
+   *
+   * @param array $digest
+   *   Digest render array.
+   *
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   Digest response.
+   */
+  private function getDigestAsResponse(array $digest) {
     // @todo dependency injection
-    // @todo move on renderDigest
     /** @var \Drupal\Core\Render\Renderer $renderer */
     $renderer = \Drupal::service('renderer');
-    $renderedDigest = $renderer->renderRoot($digest);
-    return new Response($renderedDigest);
+    if (!empty($digest)) {
+      $output = $renderer->renderRoot($digest);
+    }
+    else {
+      $noResults = [
+        '#markup' => t('No content for the digest.'),
+      ];
+      $output = $renderer->renderRoot($noResults);
+    }
+    return new Response($output);
   }
 
   /**
@@ -209,7 +257,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
     // @todo add text
     // @todo refactor CiviMail service
     $currentDigestId = $digest_id;
-    if(is_null($digest_id)) {
+    if (is_null($digest_id)) {
       // @todo get it by incrementing the last digest id.
       $currentDigestId = 0;
     }
@@ -239,7 +287,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
    */
   private function getDigestTitle($digest_id = NULL) {
     $config = $this->configFactory->get('civimail_digest.settings');
-    return $config->get('digest_title') . ' ' . $digest_id;
+    return $config->get('digest_title');
   }
 
   /**
@@ -258,7 +306,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
   /**
    * Returns an absolute link to a digest view.
    *
-   * @param $digest_id
+   * @param int $digest_id
    *   Digest id.
    *
    * @return array|\Drupal\Core\Link
@@ -285,14 +333,12 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * {@inheritdoc}
    */
   public function prepareDigest() {
-    $content = $this->getDigestContent();
+    $content = $this->prepareDigestContent();
     if (!empty($content)) {
       $digestId = $this->createDigest();
-      // Create digest
-      // get its id.
+      // Create digest and get its id.
+      // Store each mailing id for an entity and store a digest reference.
     }
-    // Get the digest content
-    // store each entity to be sent.
     // TODO: Implement prepareDigest() method.
   }
 
@@ -302,15 +348,6 @@ class CiviMailDigest implements CiviMailDigestInterface {
   public function getDigests() {
     $config = $this->configFactory->get('civimail_digest.settings');
     // TODO: Implement getDigests() method.
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function viewDigest($digest_id) {
-    // TODO: Implement previewDigest() method.
-    // @todo cacheable response.
-    return new Response();
   }
 
   /**

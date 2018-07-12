@@ -13,15 +13,7 @@ interface CiviMailDigestInterface {
    * @return bool
    *   The content status for the digest.
    */
-  public function hasDigestContent();
-
-  /**
-   * Previews the digest before its preparation.
-   *
-   * @return \Symfony\Component\HttpFoundation\Response
-   *   Digest preview.
-   */
-  public function previewDigest();
+  public function hasNextDigestContent();
 
   /**
    * Collects the nodes that must be part of the digest.
@@ -35,12 +27,12 @@ interface CiviMailDigestInterface {
   public function prepareDigest();
 
   /**
-   * Gets the digests with their status.
+   * Previews the digest before its preparation.
    *
-   * @return array
-   *   List of digests.
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   Digest preview.
    */
-  public function getDigests();
+  public function previewDigest();
 
   /**
    * Views a digest that has already been prepared.
@@ -52,6 +44,14 @@ interface CiviMailDigestInterface {
    *   Prepared digest view.
    */
   public function viewDigest($digest_id);
+
+  /**
+   * Gets the digests with their status.
+   *
+   * @return array
+   *   List of digests.
+   */
+  public function getDigests();
 
   /**
    * Notifies the validator groups if a new digest is ready.
