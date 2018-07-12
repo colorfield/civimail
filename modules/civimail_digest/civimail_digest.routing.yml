@@ -9,43 +9,35 @@ civimail_digest.settings:
     _admin_route: TRUE
 
 civimail_digest.digest_list:
-  path: '/admin/civimail_digest/digests'
+  path: '/civimail_digest/digests'
   defaults:
     _controller: '\Drupal\civimail_digest\Controller\DigestController::digestList'
     _title: 'CiviMail Digests'
   requirements:
     _permission: 'administer civimail'
-  options:
-    _admin_route: TRUE
 
 civimail_digest.preview:
-  path: '/admin/civimail_digest/preview'
+  path: '/civimail_digest/preview'
   defaults:
     _controller: '\Drupal\civimail_digest\Controller\DigestController::preview'
     _title: 'CiviMail Digest preview'
   requirements:
     _permission: 'administer civimail'
-  options:
-    _admin_route: TRUE
 
 civimail_digest.prepare:
-  path: '/admin/civimail_digest/prepare'
+  path: '/civimail_digest/prepare'
   defaults:
     _controller: '\Drupal\civimail_digest\Controller\DigestController::prepare'
     _title: 'CiviMail Digests'
   requirements:
     _permission: 'administer civimail'
-  options:
-    _admin_route: TRUE
 
 civimail_digest.view:
-  path: '/admin/civimail_digest/view/{digest_id}'
+  path: '/civimail_digest/view/{digest_id}'
   defaults:
     _controller: '\Drupal\civimail_digest\Controller\DigestController::view'
     _title: 'CiviMail Digest' # @todo title callback with digest title and id.
   requirements:
     _permission: 'administer civimail'
-  options:
-    _admin_route: TRUE
 
 # @todo digest delete after preparation if not already sent
