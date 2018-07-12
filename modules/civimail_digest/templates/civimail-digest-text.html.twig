@@ -1,7 +1,7 @@
 {#
 /**
  * @file
- * Default theme implementation for CiviMail text mail.
+ * Default theme implementation for CiviMail digest text mail.
  * Variables:
  * - is_test : A boolean indicating that the mail is used in test mode.
  * @todo documentation
@@ -17,7 +17,9 @@
 {% trans %}View in other languages {{ translation_urls }}{% endtrans %}
 {% endif %}
 
-{{ entity_view }}
+{% for entity in entities %}
+  {{ entity }}
+{% endfor %}
 
 {% if civicrm_footer %}
   {{ civicrm_footer }}

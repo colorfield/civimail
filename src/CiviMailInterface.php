@@ -47,6 +47,19 @@ interface CiviMailInterface {
   public function getMailingTemplateText(ContentEntityInterface $entity);
 
   /**
+   * Replaces a text with relative urls by absolute ones.
+   *
+   * The match is done with urls starting with a slash.
+   *
+   * @param string $text
+   *   Text that contains relative urls.
+   *
+   * @return string
+   *   Text replaced with absolute urls.
+   */
+  public function absolutizeUrls($text);
+
+  /**
    * Schedules and sends a CiviCRM mailing.
    *
    * @param array $params

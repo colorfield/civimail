@@ -2,6 +2,7 @@
 
 namespace Drupal\civimail_digest;
 
+use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Core\Database\Driver\mysql\Connection;
 use Drupal\civicrm_tools\CiviCrmApiInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -123,6 +124,14 @@ class CiviMailDigest implements CiviMailDigestInterface {
         // @todo include update case
       }
 
+      // Maps all the candidate entities as a plain list of entity ids
+      // grouped by entity type so they can then be loaded easily.
+      foreach ($candidateEntities as $entityTypeId => $entities) {
+        $result[$entityTypeId] = [];
+        foreach ($entities as $entityId => $entityLog) {
+          $result[$entityTypeId][] = $entityId;
+        }
+      }
     }
     return $result;
   }
@@ -143,8 +152,12 @@ class CiviMailDigest implements CiviMailDigestInterface {
       $entities = $this->getDigestEntities($content);
       $digest = $this->buildDigest($entities);
     }
-    // @todo cacheable response.
-    return new Response();
+    // @todo dependency injection
+    // @todo move on renderDigest
+    /** @var \Drupal\Core\Render\Renderer $renderer */
+    $renderer = \Drupal::service('renderer');
+    $renderedDigest = $renderer->renderRoot($digest);
+    return new Response($renderedDigest);
   }
 
   /**
@@ -158,6 +171,24 @@ class CiviMailDigest implements CiviMailDigestInterface {
    */
   private function getDigestEntities(array $content) {
     $result = [];
+
+    $config = $this->configFactory->get('civimail_digest.settings');
+    // @todo assert defined
+    $digestViewMode = $config->get('view_mode');
+    foreach ($content as $entityTypeId => $entityIds) {
+      try {
+        $entities = $this->entityTypeManager->getStorage($entityTypeId)->loadMultiple($entityIds);
+        foreach ($entities as $entity) {
+          $viewBuilder = $this->entityTypeManager->getViewBuilder($entityTypeId);
+          $view = $viewBuilder->view($entity, $digestViewMode);
+          $renderedView = \Drupal::service('renderer')->renderRoot($view);
+          $result[] = $renderedView;
+        }
+      }
+      catch (InvalidPluginDefinitionException $exception) {
+        \Drupal::messenger()->addError($exception->getMessage());
+      }
+    }
     return $result;
   }
 
@@ -171,8 +202,10 @@ class CiviMailDigest implements CiviMailDigestInterface {
    *   Render array of the digest.
    */
   private function buildDigest(array $entities) {
-    $result = [];
-    return $result;
+    return [
+      '#theme' => 'civimail_digest_html',
+      '#entities' => $entities,
+    ];
   }
 
   /**
@@ -237,6 +270,8 @@ class CiviMailDigest implements CiviMailDigestInterface {
    */
   public function sendDigest($digest_id) {
     // TODO: Implement sendDigest() method.
+    /** @var \Drupal\civimail\CiviMailInterface $civiMail */
+    $civiMail = \Drupal::service('civimail');
   }
 
 }

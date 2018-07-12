@@ -183,17 +183,9 @@ class CiviMail implements CiviMailInterface {
   }
 
   /**
-   * Replaces a text with relative urls by absolute ones.
-   *
-   * The match is done with urls starting with a slash.
-   *
-   * @param string $text
-   *   Text that contains relative urls.
-   *
-   * @return string
-   *   Text replaced with absolute urls.
+   * {@inheritdoc}
    */
-  private function absolutizeUrls($text) {
+  public function absolutizeUrls($text) {
     // @todo review possible security issue.
     $baseUrl = \Drupal::request()->getSchemeAndHttpHost();
     // Cover multi-site or public files configuration override.

@@ -28,7 +28,30 @@ function civimail_digest_help($route_name, RouteMatchInterface $route_match) {
  */
 function civimail_digest_theme() {
   return [
-    'civimail_digest' => [
+    // @todo set template suggestions
+    'civimail_digest_html' => [
+      'variables' => [
+        'entities' => NULL,
+        'base_path' => NULL,
+        'absolute_link' => NULL,
+        'translation_links' => NULL,
+        'civicrm_header' => NULL,
+        'civicrm_footer' => NULL,
+        'civicrm_unsubscribe_url' => NULL,
+        'is_test' => NULL,
+      ],
+      'render element' => 'children',
+    ],
+    'civimail_digest_text' => [
+      'variables' => [
+        'entities' => NULL,
+        'absolute_url' => NULL,
+        'translation_urls' => NULL,
+        'civicrm_header' => NULL,
+        'civicrm_footer' => NULL,
+        'civicrm_unsubscribe_url' => NULL,
+        'is_test' => NULL,
+      ],
       'render element' => 'children',
     ],
   ];
