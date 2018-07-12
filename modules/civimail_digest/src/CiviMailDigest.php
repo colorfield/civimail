@@ -208,21 +208,23 @@ class CiviMailDigest implements CiviMailDigestInterface {
   private function buildDigest(array $entities, $digest_id = NULL) {
     // @todo add text
     // @todo refactor CiviMail service
-    $currentId = $digest_id;
+    $currentDigestId = $digest_id;
     if(is_null($digest_id)) {
       // @todo get it by incrementing the last digest id.
-      $currentId = 0;
+      $currentDigestId = 0;
     }
     return [
       '#theme' => 'civimail_digest_html',
       '#entities' => $entities,
-      '#digest_title' => $this->getDigestTitle($currentId),
+      '#digest_title' => $this->getDigestTitle($currentDigestId),
+      '#digest_id' => $currentDigestId,
       // Use CiviCRM token.
       '#civicrm_unsubscribe_url' => '{action.unsubscribeUrl}',
       // Allows template overrides to load assets provided by the current theme
       // with {{ base_path ~ directory }}.
       '#base_path' => \Drupal::request()->getSchemeAndHttpHost() . '/',
-      '#absolute_link' => $this->getAbsoluteDigestLink($currentId),
+      '#absolute_link' => $this->getAbsoluteDigestLink($currentDigestId),
+      '#absolute_url' => $this->getAbsoluteDigestUrl($currentDigestId),
     ];
   }
 

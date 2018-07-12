@@ -9,7 +9,8 @@
  * - entities: An array
  * - is_test : A boolean indicating that the mail is used in test mode.
  * - digest_title
- * - absolute_link
+ * - digest_id
+ * - absolute_url
  * - translation_links
  * - civicrm_unsubscribe_url
  * @todo add documentation
@@ -19,7 +20,7 @@
   {{ civicrm_header }}
 {% endif %}
 
-{{ absolute_link }}
+{{ absolute_url }}
 
 {% if translation_links %}
   {% trans %}View in other languages {{ translation_links }}{% endtrans %}

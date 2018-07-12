@@ -32,9 +32,11 @@ function civimail_digest_theme() {
     'civimail_digest_html' => [
       'variables' => [
         'digest_title' => NULL,
+        'digest_id' => NULL,
         'entities' => NULL,
         'base_path' => NULL,
         'absolute_link' => NULL,
+        'absolute_url' => NULL,
         'translation_links' => NULL,
         'civicrm_header' => NULL,
         'civicrm_footer' => NULL,
@@ -46,6 +48,7 @@ function civimail_digest_theme() {
     'civimail_digest_text' => [
       'variables' => [
         'digest_title' => NULL,
+        'digest_id' => NULL,
         'entities' => NULL,
         'absolute_url' => NULL,
         'translation_urls' => NULL,
