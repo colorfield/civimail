@@ -206,22 +206,33 @@ class SettingsForm extends ConfigFormBase {
 
     $availableGroups = $this->getGroups();
 
+    // Do not get from contacts when the group filter is empty
+    // as this could fetch all the contacts.
+    $fromGroup = [];
+    $fromContacts = [];
     if (!empty($form_state->getValue('from_group'))) {
       $fromGroup = $form_state->getValue('from_group');
+      $fromContacts = $this->getContacts([$fromGroup]);
     }
-    else {
+    elseif (!empty($config->get('from_group'))) {
       $fromGroup = $config->get('from_group');
+      $fromContacts = $this->getContacts([$fromGroup]);
     }
-    $fromContacts = $this->getContacts([$fromGroup]);
 
+    // Do not get validation contacts when the group filter is empty
+    // as this could fetch all the contacts.
+    $validationGroups = [];
+    $validationContacts = [];
     if (!empty($form_state->getValue('validation_groups'))) {
       $validationGroups = $form_state->getValue('validation_groups');
+      // @todo multiple validation groups
+      $validationContacts = $this->getContacts([$validationGroups]);
     }
-    else {
+    elseif (!empty($config->get('validation_groups'))) {
       $validationGroups = $config->get('validation_groups');
+      // @todo multiple validation groups
+      $validationContacts = $this->getContacts([$validationGroups]);
     }
-    // @todo multiple validation groups
-    $validationContacts = $this->getContacts([$validationGroups]);
 
     // @todo dependency injection
     $entityDisplayRepository = \Drupal::service('entity_display.repository');
@@ -239,7 +250,8 @@ class SettingsForm extends ConfigFormBase {
     $form['digest_title'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Digest title'),
-      '#description' => $this->t('Title that appears in mail subject, title, browser view. The digest number will be appended.'),
+      // @todo use token for digest number.
+      '#description' => $this->t('Title that appears in mail subject, and title in browser view. The digest number will be appended.'),
       '#maxlength' => 254,
       '#size' => 64,
       '#required' => TRUE,
@@ -386,10 +398,9 @@ class SettingsForm extends ConfigFormBase {
     ];
     $form['contact']['from_contact_container']['from_contact_fieldset']['from_contact'] = [
       '#type' => 'select',
-      '#title' => $availableGroups[$config->get('from_group')] . ' ' . $this->t('from contact'),
+      '#title' => $this->t('from contact'),
       '#description' => $this->t('Contact that will be used as the sender.'),
       '#options' => $fromContacts,
-    // @todo validate on group change
       '#default_value' => $config->get('from_contact'),
       '#required' => TRUE,
     ];
@@ -449,7 +460,6 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('Validation contacts'),
       '#description' => $this->t('CiviCRM contacts that will confirm that the digest can be sent.'),
       '#options' => $validationContacts,
-    // @todo validate on group change
       '#default_value' => $config->get('validation_contacts'),
       '#multiple' => TRUE,
       '#required' => TRUE,
