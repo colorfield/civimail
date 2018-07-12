@@ -17,12 +17,18 @@ function civimail_digest_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ],
+      'civicrm_mailing_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'The CiviMail id that was used for this digest.',
+      ],
       'status' => [
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
-        'description' => 'The digest status (0: prepared, 1: sent).',
+        'description' => 'The digest status (0: prepared, 1: sent, 2: failed to be sent).',
       ],
       'timestamp' => [
         'type' => 'int',
@@ -33,47 +39,24 @@ function civimail_digest_schema() {
     'primary key' => ['id'],
   ];
   $schema['civimail_digest_entity'] = [
-    'description' => 'Logs entities that were part of a digest.',
+    'description' => 'Logs CiviMail mailings that are part of a digest.',
     'fields' => [
       'id' => [
         'type' => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
       ],
-      'entity_id' => [
+      'digest_id' => [
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'default' => 0,
-        'description' => 'The entity id.',
+        'description' => 'The digest id reference.',
       ],
-      'entity_type_id' => [
-        'type' => 'varchar_ascii',
-        'length' => 32,
-        'not null' => TRUE,
-        'default' => '',
-        'description' => "The entity type id.",
-      ],
-      'entity_bundle' => [
-        'type' => 'varchar_ascii',
-        'length' => 32,
-        'not null' => TRUE,
-        'default' => '',
-        'description' => "The entity bundle.",
-      ],
-      'langcode' => [
-        'type' => 'varchar_ascii',
-        'length' => 12,
-        'not null' => TRUE,
-        'default' => '',
-        'description' => "The entity language.",
-      ],
-      'civimail_id' => [
+      'civicrm_mailing_id' => [
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'default' => 0,
-        'description' => 'The CiviMail id for this entity.',
+        'description' => 'The {civimail_entity_mailing.civicrm_mailing_id} id that was used in this digest. The {civimail_entity_mailing} table stores the bundle, entity type and language for a CiviMail mailing id.',
       ],
       'timestamp' => [
         'type' => 'int',
@@ -83,8 +66,26 @@ function civimail_digest_schema() {
     ],
     'primary key' => ['id'],
     'indexes' => [
-      'entity_id' => ['entity_id'],
+      'digest_id' => ['digest_id'],
     ],
+  ];
+  $schema['civimail_digest__group'] = [
+    'description' => 'Logs history of groups that were the subject of a digest mailing.',
+    'fields' => [
+      'digest_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'The CivMail digest id.',
+      ],
+      'civicrm_group_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'The CiviCRM group id.',
+      ],
+    ],
+    'primary key' => ['digest_id', 'civicrm_group_id'],
   ];
   return $schema;
 }
