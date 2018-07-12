@@ -228,6 +228,14 @@ class SettingsForm extends ConfigFormBase {
     // @todo extend to other content entities
     $viewModes = $entityDisplayRepository->getViewModeOptions('node');
 
+    // @todo dependency injection
+    $languageManager = \Drupal::languageManager();
+    $languages = $languageManager->getLanguages();
+    $availableLanguages = [];
+    foreach ($languages as $key => $language) {
+      $availableLanguages[$key] = $language->getName();
+    }
+
     $form['digest_title'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Digest title'),
@@ -296,12 +304,12 @@ class SettingsForm extends ConfigFormBase {
         ],
       ],
     ];
-    $form['limit']['entity_limit'] = [
+    $form['limit']['quantity_limit'] = [
       '#type' => 'number',
-      '#title' => $this->t('Entity limit'),
-      '#description' => $this->t('Limit entities that will be included in a single digest.'),
+      '#title' => $this->t('Quantity limit'),
+      '#description' => $this->t('Limits the amount of entities that will be included in a single digest.'),
       '#required' => TRUE,
-      '#default_value' => $config->get('entity_limit'),
+      '#default_value' => $config->get('quantity_limit'),
     ];
     $form['limit']['bundles'] = [
       '#type' => 'select',
@@ -324,6 +332,16 @@ class SettingsForm extends ConfigFormBase {
       '#description' => $this->t('Do not include content older than the defined days.'),
       '#required' => TRUE,
       '#default_value' => $config->get('age_in_days'),
+    ];
+    // @todo open to multilingual digest
+    $form['limit']['language'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Language'),
+      '#description' => $this->t('Include CiviMail mailings in this language.'),
+      '#options' => $availableLanguages,
+      '#multiple' => FALSE,
+      '#required' => TRUE,
+      '#default_value' => $config->get('language'),
     ];
 
     $form['contact'] = [
@@ -465,10 +483,11 @@ class SettingsForm extends ConfigFormBase {
         ->set('week_day', $form_state->getValue('week_day'))
         ->set('hour', $form_state->getValue('hour'))
         ->set('view_mode', $form_state->getValue('view_mode'))
-        ->set('entity_limit', $form_state->getValue('entity_limit'))
+        ->set('quantity_limit', $form_state->getValue('quantity_limit'))
         ->set('bundles', $form_state->getValue('bundles'))
         ->set('include_update', $form_state->getValue('include_update'))
         ->set('age_in_days', $form_state->getValue('age_in_days'))
+        ->set('language', $form_state->getValue('language'))
         ->set('from_group', $form_state->getValue('from_group'))
         ->set('from_contact', $form_state->getValue('from_contact'))
         ->set('to_groups', $form_state->getValue('to_groups'))

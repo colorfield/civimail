@@ -8,11 +8,12 @@ use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\civimail_digest\CiviMailDigestInterface;
 use Drupal\Core\Datetime\DateFormatter;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * Class DigestListController.
  */
-class DigestListController extends ControllerBase {
+class DigestController extends ControllerBase {
 
   /**
    * Drupal\civimail_digest\CiviMailDigestInterface definition.
@@ -151,8 +152,11 @@ class DigestListController extends ControllerBase {
    * Prepares a digest and redirects to the list.
    */
   public function prepare() {
-    // @todo implement
-    return $this->digests();
+    \Drupal::messenger()->addStatus($this->t('Checking for content'));
+    $this->civimailDigest->prepareDigest();
+
+    $url = Url::fromRoute('civimail_digest.digest_list');
+    return new RedirectResponse($url->toString());
   }
 
   /**

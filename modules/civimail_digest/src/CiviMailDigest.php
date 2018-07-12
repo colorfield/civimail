@@ -51,21 +51,55 @@ class CiviMailDigest implements CiviMailDigestInterface {
   }
 
   /**
-   * Get the content entities that are candidates for a digest.
+   * Get the content entities keys that are candidates for a digest.
    *
    * These candidates are evaluated from CiviMail mailings that were
    * previously sent and the configured limitations.
    *
    * @return array
+   *   Content entities result from the {civimail_entity_mailing} table.
    */
   private function getDigestContent() {
     $result = [];
     $config = $this->configFactory->get('civimail_digest.settings');
     if ($config->get('is_active')) {
-      $maxDays = $config->get('age_in_days');
-      $contentLimit = $config->get('entity_limit');
-      $bundles = $config->get('bundles');
+      // @todo assert all the values and send to configuration if not valid.
+      $quantityLimit = $config->get('quantity_limit');
+      $language = $config->get('language');
+      // @todo use include update flag
       $includeUpdate = $config->get('include_update');
+
+      $configuredBundles = $config->get('bundles');
+      $bundles = [];
+      // Get rid of the keys, take only values if they are the same.
+      foreach ($configuredBundles as $key => $configuredBundle) {
+        if ($configuredBundle === $key) {
+          $bundles[] = $configuredBundle;
+        }
+      }
+
+      $maxDays = $config->get('age_in_days');
+      // @todo get from system settings
+      $timeZone = new \DateTimeZone('Europe/Brussels');
+      $contentAge = new \DateTime('now -' . $maxDays . ' day', $timeZone);
+
+      $query = $this->database->select('civimail_entity_mailing', 'cem')
+        ->fields('cem', [
+          'entity_id',
+          'entity_bundle',
+          'langcode',
+          'civicrm_mailing_id',
+          'timestamp',
+        ]
+        );
+      $query->condition('cem.timestamp', $contentAge->getTimestamp(), '>');
+      // @todo extend to other entity types
+      $query->condition('cem.entity_type_id', 'node');
+      $query->condition('cem.entity_bundle', $bundles, 'IN');
+      $query->condition('cem.langcode', $language);
+      $query->orderBy('cem.timestamp', 'DESC');
+      $query->range(0, $quantityLimit);
+      $result = $query->execute()->fetchAll();
     }
     // Table civimail_entity_mailing.
     return $result;
@@ -79,12 +113,27 @@ class CiviMailDigest implements CiviMailDigestInterface {
   }
 
   /**
+   * Creates a new digest id in the digest table and returns it.
+   *
+   * @return int
+   *   The digest id.
+   */
+  public function createDigest() {
+    // @todo implement
+    return 0;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function prepareDigest() {
-    // Create digest
-    // get its id
-    // get the digest content
+    $content = $this->getDigestContent();
+    if (!empty($content)) {
+      $digestId = $this->createDigest();
+      // Create digest
+      // get its id.
+    }
+    // Get the digest content
     // store each entity to be sent.
     // TODO: Implement prepareDigest() method.
   }
