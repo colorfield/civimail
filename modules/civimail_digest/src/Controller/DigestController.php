@@ -131,6 +131,11 @@ class DigestController extends ControllerBase {
     $configureLink = $configureLink->toRenderable();
     $items[] = render($configureLink);
 
+    $configureUrl = Url::fromRoute('civimail_digest.preview');
+    $configureLink = Link::fromTextAndUrl($this->t('Preview'), $configureUrl);
+    $configureLink = $configureLink->toRenderable();
+    $items[] = render($configureLink);
+
     // @todo
     $prepareUrl = Url::fromRoute('civimail_digest.prepare');
     $prepareLink = Link::fromTextAndUrl($this->t("Prepare digest"), $prepareUrl);
@@ -149,7 +154,20 @@ class DigestController extends ControllerBase {
   }
 
   /**
+   * Previews the digest to be prepared.
+   *
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   Digest preview.
+   */
+  public function preview() {
+    return $this->civimailDigest->previewDigest();
+  }
+
+  /**
    * Prepares a digest and redirects to the list.
+   *
+   * @return \Symfony\Component\HttpFoundation\RedirectResponse
+   *   Redirection the the digest list.
    */
   public function prepare() {
     \Drupal::messenger()->addStatus($this->t('Checking for content'));
@@ -160,12 +178,25 @@ class DigestController extends ControllerBase {
   }
 
   /**
+   * Views a digest that has already been prepared.
+   *
+   * @param int $digest_id
+   *   The digest id.
+   *
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   Prepared digest view.
+   */
+  public function view($digest_id) {
+    return $this->civimailDigest->viewDigest($digest_id);
+  }
+
+  /**
    * Returns a list of digests with status and actions.
    *
    * @return array
    *   Return list and actions links for digests.
    */
-  public function digests() {
+  public function digestList() {
     return [
       'links' => $this->buildActionLinks(),
       'table' => $this->buildDigestTable(),
