@@ -132,24 +132,35 @@ class DigestController extends ControllerBase {
   private function buildActionLinks() {
     $items = [];
 
-    $configureUrl = Url::fromRoute('civimail_digest.settings');
+    // Set destination back to the list for configuration.
+    $digestListUrl = Url::fromRoute('civimail_digest.digest_list');
+    $configureUrl = Url::fromRoute('civimail_digest.settings', [], [
+      'query' => ['destination' => $digestListUrl->toString()],
+      'absolute' => TRUE,
+    ]);
     $configureLink = Link::fromTextAndUrl($this->t('Configure'), $configureUrl);
     $configureLink = $configureLink->toRenderable();
     $items[] = render($configureLink);
 
-    $configureUrl = Url::fromRoute('civimail_digest.preview');
-    $configureLink = Link::fromTextAndUrl($this->t('Preview'), $configureUrl);
-    $configureLink = $configureLink->toRenderable();
-    $items[] = render($configureLink);
+    if ($this->civimailDigest->isActive()) {
+      $previewUrl = Url::fromRoute('civimail_digest.preview');
+      $previewLink = Link::fromTextAndUrl($this->t('Preview'), $previewUrl);
+      $previewLink = $previewLink->toRenderable();
+      $items[] = render($previewLink);
 
-    // @todo
-    $prepareUrl = Url::fromRoute('civimail_digest.prepare');
-    $prepareLink = Link::fromTextAndUrl($this->t("Prepare digest"), $prepareUrl);
-    $prepareLink = $prepareLink->toRenderable();
-    $prepareLink['#attributes'] = [
-      'class' => ['button', 'button-action', 'button--primary', 'button--small'],
-    ];
-    $items[] = render($prepareLink);
+      $prepareUrl = Url::fromRoute('civimail_digest.prepare');
+      $prepareLink = Link::fromTextAndUrl($this->t("Prepare digest"), $prepareUrl);
+      $prepareLink = $prepareLink->toRenderable();
+      $prepareLink['#attributes'] = [
+        'class' => [
+          'button',
+          'button-action',
+          'button--primary',
+          'button--small',
+        ],
+      ];
+      $items[] = render($prepareLink);
+    }
 
     return [
       '#theme' => 'item_list',
@@ -203,10 +214,17 @@ class DigestController extends ControllerBase {
    *   Return list and actions links for digests.
    */
   public function digestList() {
-    return [
-      'links' => $this->buildActionLinks(),
-      'table' => $this->buildDigestTable(),
-    ];
+    if ($this->civimailDigest->isActive()) {
+      return [
+        'links' => $this->buildActionLinks(),
+        'table' => $this->buildDigestTable(),
+      ];
+    }
+    else {
+      return [
+        'links' => $this->buildActionLinks(),
+      ];
+    }
   }
 
 }

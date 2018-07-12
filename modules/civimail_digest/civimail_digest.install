@@ -20,7 +20,7 @@ function civimail_digest_schema() {
       'civicrm_mailing_id' => [
         'type' => 'int',
         'unsigned' => TRUE,
-        'not null' => TRUE,
+        'not null' => FALSE,
         'description' => 'The CiviMail id that was used for this digest.',
       ],
       'status' => [
@@ -28,7 +28,7 @@ function civimail_digest_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
-        'description' => 'The digest status (0: prepared, 1: sent, 2: failed to be sent).',
+        'description' => 'The digest status (0: created, 1: prepared, 2: sent, 3: failed to be sent).',
       ],
       'timestamp' => [
         'type' => 'int',

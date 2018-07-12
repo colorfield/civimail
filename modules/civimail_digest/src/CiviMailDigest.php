@@ -45,6 +45,13 @@ class CiviMailDigest implements CiviMailDigestInterface {
   protected $configFactory;
 
   /**
+   * Drupal\Core\Config\ImmutableConfig definition.
+   *
+   * @var \Drupal\Core\Config\ImmutableConfig
+   */
+  private $digestConfig;
+
+  /**
    * Constructs a new CiviMailDigest object.
    */
   public function __construct(Connection $database, CiviCrmApiInterface $civicrm_tools_api, EntityTypeManagerInterface $entity_type_manager, ConfigFactoryInterface $config_factory) {
@@ -52,6 +59,21 @@ class CiviMailDigest implements CiviMailDigestInterface {
     $this->civicrmToolsApi = $civicrm_tools_api;
     $this->entityTypeManager = $entity_type_manager;
     $this->configFactory = $config_factory;
+    $this->digestConfig = $this->configFactory->get('civimail_digest.settings');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isActive() {
+    $result = FALSE;
+    if (!$this->digestConfig->get('is_active')) {
+      \Drupal::messenger()->addWarning(t('The digest feature is not enabled.'));
+    }
+    else {
+      $result = TRUE;
+    }
+    return $result;
   }
 
   /**
@@ -72,14 +94,13 @@ class CiviMailDigest implements CiviMailDigestInterface {
    */
   private function prepareDigestContent() {
     $result = [];
-    $config = $this->configFactory->get('civimail_digest.settings');
-    if ($config->get('is_active')) {
+    if ($this->isActive()) {
       // @todo assert all the values and send to configuration if not valid.
-      $quantityLimit = $config->get('quantity_limit');
-      $language = $config->get('language');
-      $includeUpdate = $config->get('include_update');
+      $quantityLimit = $this->digestConfig->get('quantity_limit');
+      $language = $this->digestConfig->get('language');
+      $includeUpdate = $this->digestConfig->get('include_update');
 
-      $configuredBundles = $config->get('bundles');
+      $configuredBundles = $this->digestConfig->get('bundles');
       $bundles = [];
       // Get rid of the keys, take only values if they are the same.
       foreach ($configuredBundles as $key => $configuredBundle) {
@@ -88,7 +109,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
         }
       }
 
-      $maxDays = $config->get('age_in_days');
+      $maxDays = $this->digestConfig->get('age_in_days');
       // @todo get from system settings
       $timeZone = new \DateTimeZone('Europe/Brussels');
       $contentAge = new \DateTime('now -' . $maxDays . ' day', $timeZone);
@@ -221,10 +242,8 @@ class CiviMailDigest implements CiviMailDigestInterface {
    */
   private function getDigestEntities(array $content) {
     $result = [];
-
-    $config = $this->configFactory->get('civimail_digest.settings');
     // @todo assert defined
-    $digestViewMode = $config->get('view_mode');
+    $digestViewMode = $this->digestConfig->get('view_mode');
     foreach ($content as $entityTypeId => $entityIds) {
       try {
         $entities = $this->entityTypeManager->getStorage($entityTypeId)->loadMultiple($entityIds);
@@ -286,8 +305,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
    *   Digest title.
    */
   private function getDigestTitle($digest_id = NULL) {
-    $config = $this->configFactory->get('civimail_digest.settings');
-    return $config->get('digest_title');
+    return $this->digestConfig->get('digest_title');
   }
 
   /**
@@ -325,8 +343,22 @@ class CiviMailDigest implements CiviMailDigestInterface {
    *   The digest id.
    */
   public function createDigest() {
-    // @todo implement
-    return 0;
+    $result = NULL;
+    try {
+      $fields = [
+        'status' => CiviMailDigestInterface::STATUS_CREATED,
+        'timestamp' => \Drupal::time()->getRequestTime(),
+      ];
+      // Returns the serial id of the digest.
+      $result = $this->database->insert('civimail_digest')
+        ->fields($fields)
+        ->execute();
+    }
+    catch (\Exception $exception) {
+      \Drupal::logger('civimail_digest')->error($exception->getMessage());
+      \Drupal::messenger()->addError($exception->getMessage());
+    }
+    return $result;
   }
 
   /**
@@ -336,8 +368,10 @@ class CiviMailDigest implements CiviMailDigestInterface {
     $content = $this->prepareDigestContent();
     if (!empty($content)) {
       $digestId = $this->createDigest();
-      // Create digest and get its id.
-      // Store each mailing id for an entity and store a digest reference.
+      if (NULL !== $digestId) {
+        // Store each mailing id for an entity and store a digest reference.
+        // Set then the status to 1.
+      }
     }
     // TODO: Implement prepareDigest() method.
   }
@@ -346,7 +380,6 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * {@inheritdoc}
    */
   public function getDigests() {
-    $config = $this->configFactory->get('civimail_digest.settings');
     // TODO: Implement getDigests() method.
   }
 
@@ -369,8 +402,37 @@ class CiviMailDigest implements CiviMailDigestInterface {
    */
   public function sendDigest($digest_id) {
     // TODO: Implement sendDigest() method.
-    /** @var \Drupal\civimail\CiviMailInterface $civiMail */
-    $civiMail = \Drupal::service('civimail');
+    if ($this->isActive()) {
+      /** @var \Drupal\civimail\CiviMailInterface $civiMail */
+      $civiMail = \Drupal::service('civimail');
+      // If success set the civimail id in the civimail digest table
+      // and set the status to 2.
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDigestStatusLabel($status_id) {
+    $result = t('Unknown status');
+    switch ($status_id) {
+      case CiviMailDigestInterface::STATUS_CREATED:
+        $result = t('Created');
+        break;
+
+      case CiviMailDigestInterface::STATUS_PREPARED:
+        $result = t('Prepared');
+        break;
+
+      case CiviMailDigestInterface::STATUS_SENT:
+        $result = t('Sent');
+        break;
+
+      case CiviMailDigestInterface::STATUS_FAILED:
+        $result = t('Failed');
+        break;
+    }
+    return $result;
   }
 
 }

@@ -8,6 +8,36 @@ namespace Drupal\civimail_digest;
 interface CiviMailDigestInterface {
 
   /**
+   * The digest as a record in the digest table and is not prepared yet.
+   */
+  const STATUS_CREATED = 0;
+
+  /**
+   * The digest has content associated via previous CiviMail mailings.
+   */
+  const STATUS_PREPARED = 1;
+
+  /**
+   * The digest has already been the subject of a CiviMail mailing.
+   */
+  const STATUS_SENT = 2;
+
+  /**
+   * The digest mailing has failed.
+   */
+  const STATUS_FAILED = 3;
+
+  /**
+   * Checks if the digest is configured as active.
+   *
+   * As a side effect, displays a warning if inactive.
+   *
+   * @return bool
+   *   The configuration status.
+   */
+  public function isActive();
+
+  /**
    * Checks if the digest to be prepared has content.
    *
    * @return bool
@@ -82,5 +112,16 @@ interface CiviMailDigestInterface {
    *   Digest send status.
    */
   public function sendDigest($digest_id);
+
+  /**
+   * Returns the digest status label.
+   *
+   * @param int $status_id
+   *   Digest status id.
+   *
+   * @return string
+   *   Status label.
+   */
+  public function getDigestStatusLabel($status_id);
 
 }
