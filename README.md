@@ -9,8 +9,8 @@ Send a node from a CiviCRM Contact to CiviCRM Groups.
 **CiviMail Digest submodule**
 
 Send to selected groups a digest at
-a chosen interval of nodes that were sent, with an option to include
-updates.
+a chosen interval of nodes that were previously sent via CiviMail,
+with an option to include updates.
 
 ### Configuration
 

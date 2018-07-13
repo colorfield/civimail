@@ -84,13 +84,13 @@ class CiviMailDigest implements CiviMailDigestInterface {
   }
 
   /**
-   * Get the content entities keys that are candidates for a digest.
+   * Get the content entity ids and CiviMail mailing ids for a digest.
    *
    * These candidates are evaluated from CiviMail mailings that were
-   * previously sent and the configured limitations.
+   * previously sent and from the configured limitations.
    *
    * @return array
-   *   Content entities result from the {civimail_entity_mailing} table.
+   *   Content entity ids and mailing ids @todo improve description.
    */
   private function prepareDigestContent() {
     $result = [];
@@ -148,35 +148,55 @@ class CiviMailDigest implements CiviMailDigestInterface {
         }
       }
 
-      // @todo compare with what was sent previously
+      // Compare mailings with what was sent previously.
+      $civiMailDigestQuery = $this->database->select('civimail_entity_mailing', 'cd');
+
+
+
+      // @todo remove undesired mailings
+      $result = $candidateEntities;
 
       if ($includeUpdate) {
         // @todo include update case
-      }
-
-      // Maps all the candidate entities as a plain list of entity ids
-      // grouped by entity type so they can then be loaded easily.
-      foreach ($candidateEntities as $entityTypeId => $entities) {
-        $result[$entityTypeId] = [];
-        foreach ($entities as $entityId => $entityLog) {
-          $result[$entityTypeId][] = $entityId;
-        }
       }
     }
     return $result;
   }
 
   /**
-   * Get the content entities keys that are candidates for a digest.
+   * Retrieves the digest content that has been prepared.
    *
-   * These candidates are evaluated from CiviMail mailings that were
-   * previously sent and the configured limitations.
+   * @param int $digest_id
+   *   Digest id.
    *
    * @return array
-   *   Content entities result from the {civimail_entity_mailing} table.
+   *   List of entity ids for a digest.
    */
   private function getDigestContent($digest_id) {
     $result = [];
+    // @todo implement.
+    return $result;
+  }
+
+  private function getEntityIdsFromPreparedContent(array $content) {
+    $result = [];
+    // Maps all the entities as a plain list of entity ids
+    // grouped by entity type so they can then be loaded easily.
+    foreach ($content as $entityTypeId => $entities) {
+      $result[$entityTypeId] = [];
+      foreach ($entities as $entityId => $entityLog) {
+        $result[$entityTypeId][] = $entityId;
+      }
+    }
+    return $result;
+  }
+
+  private function getMailingIdsFromPreparedContent(array $content) {
+    $result = [];
+    // Maps all the mailing ids as a plain list of mailing ids.
+    foreach ($content as $entityTypeId => $entities) {
+      // @todo
+    }
     return $result;
   }
 
@@ -185,9 +205,10 @@ class CiviMailDigest implements CiviMailDigestInterface {
    */
   public function previewDigest() {
     $content = $this->prepareDigestContent();
+    $entityIds = $this->getEntityIdsFromPreparedContent($content);
     $digest = [];
     if (!empty($content)) {
-      $entities = $this->getDigestEntities($content);
+      $entities = $this->getDigestEntities($entityIds);
       $digest = $this->buildDigest($entities);
     }
     return $this->getDigestAsResponse($digest);
@@ -198,9 +219,10 @@ class CiviMailDigest implements CiviMailDigestInterface {
    */
   public function viewDigest($digest_id) {
     $content = $this->getDigestContent($digest_id);
+    $entityIds = $this->getEntityIdsFromPreparedContent($content);
     $digest = [];
     if (!empty($content)) {
-      $entities = $this->getDigestEntities($content);
+      $entities = $this->getDigestEntities($entityIds);
       $digest = $this->buildDigest($entities);
     }
     return $this->getDigestAsResponse($digest);
@@ -369,11 +391,12 @@ class CiviMailDigest implements CiviMailDigestInterface {
     if (!empty($content)) {
       $digestId = $this->createDigest();
       if (NULL !== $digestId) {
-        // Store each mailing id for an entity and store a digest reference.
-        // Set then the status to 1.
+        // Store each mailing id with a digest reference.
+        $content = $this->getMailingIdsFromPreparedContent($content);
+
+        // Set then the digest status to 1.
       }
     }
-    // TODO: Implement prepareDigest() method.
   }
 
   /**

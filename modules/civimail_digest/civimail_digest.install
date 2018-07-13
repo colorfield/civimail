@@ -38,8 +38,8 @@ function civimail_digest_schema() {
     ],
     'primary key' => ['id'],
   ];
-  $schema['civimail_digest_entity'] = [
-    'description' => 'Logs CiviMail mailings that are part of a digest.',
+  $schema['civimail_digest__mailing'] = [
+    'description' => 'Logs CiviMail mailings that have been included in a digest.',
     'fields' => [
       'id' => [
         'type' => 'serial',
