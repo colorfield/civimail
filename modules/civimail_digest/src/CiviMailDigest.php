@@ -90,75 +90,94 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * previously sent and from the configured limitations.
    *
    * @return array
-   *   Content entity ids and mailing ids @todo improve description.
+   *   Content entity ids grouped by entity type ids.
    */
   private function prepareDigestContent() {
     $result = [];
     if ($this->isActive()) {
-      // @todo assert all the values and send to configuration if not valid.
-      $quantityLimit = $this->digestConfig->get('quantity_limit');
-      $language = $this->digestConfig->get('language');
-      $includeUpdate = $this->digestConfig->get('include_update');
-
-      $configuredBundles = $this->digestConfig->get('bundles');
-      $bundles = [];
-      // Get rid of the keys, take only values if they are the same.
-      foreach ($configuredBundles as $key => $configuredBundle) {
-        if ($configuredBundle === $key) {
-          $bundles[] = $configuredBundle;
+      $civiMailMailings = $this->selectDigestMailings();
+      $result = [];
+      foreach ($civiMailMailings as $row) {
+        if (empty($result[$row->entity_type_id])) {
+          $result[$row->entity_type_id] = [];
         }
+        $result[$row->entity_type_id][] = $row->entity_id;
       }
+    }
+    return $result;
+  }
 
-      $maxDays = $this->digestConfig->get('age_in_days');
-      // @todo get from system settings
-      $timeZone = new \DateTimeZone('Europe/Brussels');
-      $contentAge = new \DateTime('now -' . $maxDays . ' day', $timeZone);
+  /**
+   * Selects the CiviMail mailings to be included in a digest.
+   *
+   * @return array
+   *   List of CiviMail mailing ids.
+   */
+  private function selectDigestMailings() {
+    $quantityLimit = $this->digestConfig->get('quantity_limit');
+    $language = $this->digestConfig->get('language');
+    $includeUpdate = $this->digestConfig->get('include_update');
 
-      // Get all the CiviMail mailings for entities that are matching
-      // the configuration limitations.
-      $civiMailQuery = $this->database->select('civimail_entity_mailing', 'cem')
-        ->fields('cem', [
-          'entity_id',
-          'entity_bundle',
-          'langcode',
-          'civicrm_mailing_id',
-          'timestamp',
-        ]
+    $configuredBundles = $this->digestConfig->get('bundles');
+    $bundles = [];
+    // Get rid of the keys, take only values if they are the same.
+    foreach ($configuredBundles as $key => $configuredBundle) {
+      if ($configuredBundle === $key) {
+        $bundles[] = $configuredBundle;
+      }
+    }
+
+    $maxDays = $this->digestConfig->get('age_in_days');
+    // @todo get from system settings
+    $timeZone = new \DateTimeZone('Europe/Brussels');
+    $contentAge = new \DateTime('now -' . $maxDays . ' day', $timeZone);
+
+    // Get the mailings to be excluded.
+    $sentMailings = $this->selectSentDigestMailings();
+
+    // Get all the CiviMail mailings for entities that are matching
+    // the configuration limitations.
+    $query = $this->database->select('civimail_entity_mailing', 'cem')
+      ->fields('cem', [
+        'entity_id',
+        'entity_type_id',
+        'entity_bundle',
+        'langcode',
+        'civicrm_mailing_id',
+        'timestamp',
+      ]
       );
-      $civiMailQuery->condition('cem.timestamp', $contentAge->getTimestamp(), '>');
-      // @todo extend to other entity types
-      $civiMailQuery->condition('cem.entity_type_id', 'node');
-      $civiMailQuery->condition('cem.entity_bundle', $bundles, 'IN');
-      $civiMailQuery->condition('cem.langcode', $language);
-      $civiMailQuery->orderBy('cem.timestamp', 'DESC');
-      $civiMailQuery->range(0, $quantityLimit);
-      $civiMailResult = $civiMailQuery->execute()->fetchAll();
+    $query->condition('cem.timestamp', $contentAge->getTimestamp(), '>');
+    // @todo extend to other entity types
+    $query->condition('cem.entity_type_id', 'node');
+    $query->condition('cem.entity_bundle', $bundles, 'IN');
+    if (!empty($sentMailings)) {
+      $query->condition('cem.civicrm_mailing_id', $sentMailings, 'NOT IN');
+    }
+    $query->condition('cem.langcode', $language);
+    $query->orderBy('cem.timestamp', 'DESC');
+    $query->range(0, $quantityLimit);
+    $result = $query->execute()->fetchAll();
+    // @todo compare sent entity ids + if updates must be included
+    return $result;
+  }
 
-      // Store a reference of all the mailings for candidate entities.
-      // @todo extend to other entity types
-      $candidateEntities = [
-        'node' => [],
-      ];
-      foreach ($civiMailResult as $row) {
-        if (empty($candidateEntities['node'][$row->entity_id])) {
-          $candidateEntities['node'][$row->entity_id] = ['mailing' => [$row->civicrm_mailing_id]];
-        }
-        else {
-          $candidateEntities['node'][$row->entity_id]['mailing'][] = $row->civicrm_mailing_id;
-        }
-      }
-
-      // Compare mailings with what was sent previously.
-      $civiMailDigestQuery = $this->database->select('civimail_entity_mailing', 'cd');
-
-
-
-      // @todo remove undesired mailings
-      $result = $candidateEntities;
-
-      if ($includeUpdate) {
-        // @todo include update case
-      }
+  /**
+   * Selects all the mailing that have already been included in a digest.
+   *
+   * This must not be confused with the mailing id of the Digest itself.
+   * These ones are the mailing that were sent via CiviMail that have
+   * been part of a digest.
+   *
+   * @return array
+   *   List of mailing ids.
+   */
+  private function selectSentDigestMailings() {
+    $result = [];
+    $query = $this->database->select('civimail_digest__mailing', 'cdm');
+    $queryResult = $query->fields('cdm', ['civicrm_mailing_id'])->execute();
+    foreach ($queryResult as $row) {
+      $result[] = $row->civicrm_mailing_id;
     }
     return $result;
   }
@@ -178,36 +197,13 @@ class CiviMailDigest implements CiviMailDigestInterface {
     return $result;
   }
 
-  private function getEntityIdsFromPreparedContent(array $content) {
-    $result = [];
-    // Maps all the entities as a plain list of entity ids
-    // grouped by entity type so they can then be loaded easily.
-    foreach ($content as $entityTypeId => $entities) {
-      $result[$entityTypeId] = [];
-      foreach ($entities as $entityId => $entityLog) {
-        $result[$entityTypeId][] = $entityId;
-      }
-    }
-    return $result;
-  }
-
-  private function getMailingIdsFromPreparedContent(array $content) {
-    $result = [];
-    // Maps all the mailing ids as a plain list of mailing ids.
-    foreach ($content as $entityTypeId => $entities) {
-      // @todo
-    }
-    return $result;
-  }
-
   /**
    * {@inheritdoc}
    */
   public function previewDigest() {
-    $content = $this->prepareDigestContent();
-    $entityIds = $this->getEntityIdsFromPreparedContent($content);
+    $entityIds = $this->prepareDigestContent();
     $digest = [];
-    if (!empty($content)) {
+    if (!empty($entityIds)) {
       $entities = $this->getDigestEntities($entityIds);
       $digest = $this->buildDigest($entities);
     }
@@ -218,10 +214,9 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * {@inheritdoc}
    */
   public function viewDigest($digest_id) {
-    $content = $this->getDigestContent($digest_id);
-    $entityIds = $this->getEntityIdsFromPreparedContent($content);
+    $entityIds = $this->getDigestContent($digest_id);
     $digest = [];
-    if (!empty($content)) {
+    if (!empty($entityIds)) {
       $entities = $this->getDigestEntities($entityIds);
       $digest = $this->buildDigest($entities);
     }
@@ -305,7 +300,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
     return [
       '#theme' => 'civimail_digest_html',
       '#entities' => $entities,
-      '#digest_title' => $this->getDigestTitle($currentDigestId),
+      '#digest_title' => $this->getDigestTitle(),
       '#digest_id' => $currentDigestId,
       // Use CiviCRM token.
       '#civicrm_unsubscribe_url' => '{action.unsubscribeUrl}',
@@ -320,13 +315,10 @@ class CiviMailDigest implements CiviMailDigestInterface {
   /**
    * Returns the digest title.
    *
-   * @param int $digest_id
-   *   Digest id.
-   *
    * @return string
    *   Digest title.
    */
-  private function getDigestTitle($digest_id = NULL) {
+  private function getDigestTitle() {
     return $this->digestConfig->get('digest_title');
   }
 
@@ -392,7 +384,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
       $digestId = $this->createDigest();
       if (NULL !== $digestId) {
         // Store each mailing id with a digest reference.
-        $content = $this->getMailingIdsFromPreparedContent($content);
+        // @todo implement
 
         // Set then the digest status to 1.
       }
