@@ -45,6 +45,13 @@ function civimail_digest_theme() {
       ],
       'render element' => 'children',
     ],
+    'civimail_digest_actions' => [
+      'variables' => [
+        'configure_url' => NULL,
+        'preview_url' => NULL,
+        'prepare_url' => NULL,
+      ],
+    ],
     'civimail_digest_text' => [
       'variables' => [
         'digest_title' => NULL,

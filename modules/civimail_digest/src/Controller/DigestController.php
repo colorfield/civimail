@@ -130,44 +130,24 @@ class DigestController extends ControllerBase {
    *   Render array as a list of links.
    */
   private function buildActionLinks() {
-    $items = [];
-
     // Set destination back to the list for configuration.
     $digestListUrl = Url::fromRoute('civimail_digest.digest_list');
     $configureUrl = Url::fromRoute('civimail_digest.settings', [], [
       'query' => ['destination' => $digestListUrl->toString()],
       'absolute' => TRUE,
     ]);
-    $configureLink = Link::fromTextAndUrl($this->t('Configure'), $configureUrl);
-    $configureLink = $configureLink->toRenderable();
-    $items[] = render($configureLink);
 
-    if ($this->civimailDigest->isActive()) {
-      $previewUrl = Url::fromRoute('civimail_digest.preview');
-      $previewLink = Link::fromTextAndUrl($this->t('Preview'), $previewUrl);
-      $previewLink = $previewLink->toRenderable();
-      $items[] = render($previewLink);
+    $previewUrl = ($this->civimailDigest->isActive()) ? Url::fromRoute('civimail_digest.preview') : '';
+    $prepareUrl = ($this->civimailDigest->isActive()) ? Url::fromRoute('civimail_digest.prepare') : '';
 
-      $prepareUrl = Url::fromRoute('civimail_digest.prepare');
-      $prepareLink = Link::fromTextAndUrl($this->t("Prepare digest"), $prepareUrl);
-      $prepareLink = $prepareLink->toRenderable();
-      $prepareLink['#attributes'] = [
-        'class' => [
-          'button',
-          'button-action',
-          'button--primary',
-          'button--small',
-        ],
-      ];
-      $items[] = render($prepareLink);
-    }
-
-    return [
-      '#theme' => 'item_list',
-      '#items' => $items,
-      '#type' => 'ul',
-      '#attributes' => ['class' => ['action-links']],
+    $build = [
+      '#theme' => 'civimail_digest_actions',
+      '#configure_url' => $configureUrl,
+      '#preview_url' => $previewUrl,
+      '#prepare_url' => $prepareUrl,
     ];
+
+    return $build;
   }
 
   /**
@@ -187,12 +167,9 @@ class DigestController extends ControllerBase {
    *   Redirection the the digest list.
    */
   public function prepare() {
-    if ($digestId = $this->civimailDigest->prepareDigest()) {
-      \Drupal::messenger()->addStatus($this->t('The digest @id has been prepared.', ['@id' => $digestId]));
-    }
-    else {
-      \Drupal::messenger()->addError($this->t('An error occured while preparing the digest.'));
-    }
+    \Drupal::messenger()->addStatus($this->t('Checking for content'));
+    $this->civimailDigest->prepareDigest();
+
     $url = Url::fromRoute('civimail_digest.digest_list');
     return new RedirectResponse($url->toString());
   }
