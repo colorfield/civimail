@@ -3,6 +3,7 @@
 namespace Drupal\civimail_digest\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -34,6 +35,7 @@ class DigestController extends ControllerBase {
    */
   public function __construct(CiviMailDigestInterface $civimail_digest, DateFormatter $date_formatter) {
     $this->civimailDigest = $civimail_digest;
+    $this->dateFormatter = $date_formatter;
   }
 
   /**
@@ -89,21 +91,25 @@ class DigestController extends ControllerBase {
    *   List of rows mapped to header.
    */
   private function buildRows() {
+    $digests = $this->civimailDigest->getDigests();
     $result = [];
-    // @todo get digests and iterate
-    $row = [
-      'digest_id' => '',
-    // prepared, failed to be sent, sent.
-      'status' => '',
-    // Preparation date.
-      'prepared' => '',
-    // Preview or view.
-      'view' => '',
-    // Send action or sent date.
-      'send' => '',
-    // CiviCRM groups that received the digest.
-      'groups' => '',
-    ];
+    foreach ($digests as $digest) {
+      $row = [
+        'digest_id' => $digest['id'],
+        // prepared, failed to be sent, sent.
+        'status' => $digest['status'],
+        // Preparation date.
+        'prepared' => $this->dateFormatter->format((int) $digest['timestamp'],'short'),
+        // Preview or view.
+        'view' => '',
+        // Send action or sent date.
+        'send' => '',
+        // CiviCRM groups that received the digest.
+        'groups' => empty($groups) ? $this->t('n/a') : implode(',', $digest['groups']),
+      ];
+      $result[] = $row;
+    }
+
     return $result;
   }
 
@@ -134,6 +140,7 @@ class DigestController extends ControllerBase {
 
     // Set destination back to the list for configuration.
     $digestListUrl = Url::fromRoute('civimail_digest.digest_list');
+    // Configure.
     $configureUrl = Url::fromRoute('civimail_digest.settings', [], [
       'query' => ['destination' => $digestListUrl->toString()],
       'absolute' => TRUE,
@@ -143,11 +150,13 @@ class DigestController extends ControllerBase {
     $items[] = render($configureLink);
 
     if ($this->civimailDigest->isActive()) {
+      // Preview.
       $previewUrl = Url::fromRoute('civimail_digest.preview');
       $previewLink = Link::fromTextAndUrl($this->t('Preview'), $previewUrl);
       $previewLink = $previewLink->toRenderable();
       $items[] = render($previewLink);
 
+      // Prepare.
       $prepareUrl = Url::fromRoute('civimail_digest.prepare');
       $prepareLink = Link::fromTextAndUrl($this->t("Prepare digest"), $prepareUrl);
       $prepareLink = $prepareLink->toRenderable();

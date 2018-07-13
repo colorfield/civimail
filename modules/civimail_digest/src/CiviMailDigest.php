@@ -218,6 +218,29 @@ class CiviMailDigest implements CiviMailDigestInterface {
   }
 
   /**
+   * Selects the digests and their status.
+   *
+   * @return \Drupal\Core\Database\StatementInterface|null
+   *   Digest related data for the digest list.
+   */
+  private function selectDigests() {
+    $query = $this->database->select('civimail_digest', 'cd');
+    $query->fields('cd', ['id', 'status', 'timestamp',]);
+    // leftJoin as groups couldn't be defined yet if
+    // the digest status is not 'sent'.
+    $query->leftJoin(
+      'civimail_digest__group',
+      'cg',
+      'cg.digest_id = cd.id');
+    $query->fields('cg', [
+      'civicrm_group_id',
+    ]);
+    $result = $query->execute();
+    return $result;
+  }
+
+
+  /**
    * Retrieves the digest content that has been prepared.
    *
    * @param int $digest_id
@@ -459,7 +482,26 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * {@inheritdoc}
    */
   public function getDigests() {
-    // TODO: Implement getDigests() method.
+    $result = [];
+    $queryResult = $this->selectDigests();
+    /** @var \Drupal\civicrm_tools\CiviCrmGroupInterface $civiCrmGroupTools */
+    $civiCrmGroupTools = \Drupal::service('civicrm_tools.group');
+    foreach ($queryResult as $row) {
+      $result[$row->id] = [
+        'id' => $row->id,
+        'status' => $this->getDigestStatusLabel($row->status),
+        'timestamp' => $row->timestamp,
+      ];
+      // Aggregate groups.
+      if(NULL != $row->civicrm_group_id) {
+        if(empty($result[$row->id]['groups'])) {
+          $result[$row->id]['groups'] = [];
+        }
+        $group = $civiCrmGroupTools->getGroup($row->civicrm_group_id);
+        $result[$row->id]['groups'][] = $group['name'];
+      }
+    }
+    return $result;
   }
 
   /**
