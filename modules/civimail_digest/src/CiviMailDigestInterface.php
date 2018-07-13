@@ -46,6 +46,14 @@ interface CiviMailDigestInterface {
   public function hasNextDigestContent();
 
   /**
+   * Previews the digest before its preparation.
+   *
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   Digest preview.
+   */
+  public function previewDigest();
+
+  /**
    * Collects the nodes that must be part of the digest.
    *
    * As a side effect, it assigns a digest id to each content entity
@@ -55,14 +63,6 @@ interface CiviMailDigestInterface {
    *   Digest id.
    */
   public function prepareDigest();
-
-  /**
-   * Previews the digest before its preparation.
-   *
-   * @return \Symfony\Component\HttpFoundation\Response
-   *   Digest preview.
-   */
-  public function previewDigest();
 
   /**
    * Views a digest that has already been prepared.

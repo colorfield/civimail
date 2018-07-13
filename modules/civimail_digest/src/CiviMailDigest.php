@@ -80,28 +80,33 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * {@inheritdoc}
    */
   public function hasNextDigestContent() {
-    return !empty($this->prepareDigestContent());
+    return !empty($this->prepareDigestContent()['entities']);
   }
 
   /**
-   * Get the content entity ids and CiviMail mailing ids for a digest.
+   * Get the content entity ids from CiviMail mailings for a digest.
    *
-   * These candidates are evaluated from CiviMail mailings that were
-   * previously sent and from the configured limitations.
+   * Keeping this structure as private as it is not really convenient
+   * to manipulate but avoids running too many queries to get both
+   * mailing ids and entity ids.
    *
    * @return array
-   *   Content entity ids grouped by entity type ids.
+   *   Entities (content entity ids grouped by entity type ids) and mailings.
    */
   private function prepareDigestContent() {
     $result = [];
     if ($this->isActive()) {
       $civiMailMailings = $this->selectDigestMailings();
-      $result = [];
+      $result = [
+        'entities' => [],
+        'mailings' => [],
+      ];
       foreach ($civiMailMailings as $row) {
-        if (empty($result[$row->entity_type_id])) {
-          $result[$row->entity_type_id] = [];
+        if (empty($result['entities'][$row->entity_type_id])) {
+          $result['entities'][$row->entity_type_id] = [];
         }
-        $result[$row->entity_type_id][] = $row->entity_id;
+        $result['entities'][$row->entity_type_id][] = $row->entity_id;
+        $result['mailings'][] = $row->civicrm_mailing_id;
       }
     }
     return $result;
@@ -109,6 +114,9 @@ class CiviMailDigest implements CiviMailDigestInterface {
 
   /**
    * Selects the CiviMail mailings to be included in a digest.
+   *
+   * These candidates are evaluated from CiviMail mailings that were
+   * previously sent and from the configured limitations.
    *
    * @return array
    *   List of CiviMail mailing ids.
@@ -201,13 +209,52 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * {@inheritdoc}
    */
   public function previewDigest() {
-    $entityIds = $this->prepareDigestContent();
+    $digestContent = $this->prepareDigestContent();
     $digest = [];
-    if (!empty($entityIds)) {
-      $entities = $this->getDigestEntities($entityIds);
+    if (!empty($digestContent['entities'])) {
+      $entities = $this->getDigestEntities($digestContent['entities']);
       $digest = $this->buildDigest($entities);
     }
     return $this->getDigestAsResponse($digest);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function prepareDigest() {
+    $result = NULL;
+    $digestContent = $this->prepareDigestContent();
+    if (!empty($digestContent['entities'])) {
+      // Get a new digest id.
+      $digestId = $this->createDigest();
+      if (NULL !== $digestId) {
+        // Store each mailing id with a reference to the digest id.
+        try {
+          // @todo insert all values in one query.
+          foreach ($digestContent['mailings'] as $mailingId) {
+            $fields = [
+              'digest_id' => $digestId,
+              'civicrm_mailing_id' => $mailingId,
+              'timestamp' => \Drupal::time()->getRequestTime(),
+            ];
+            $this->database->insert('civimail_digest__mailing')
+              ->fields($fields)
+              ->execute();
+          }
+          // Set then the digest status to prepared.
+          $this->database->update('civimail_digest')
+            ->fields(['status' => CiviMailDigestInterface::STATUS_PREPARED])
+            ->condition('id', $digestId)
+            ->execute();
+          $result = $digestId;
+        }
+        catch (\Exception $exception) {
+          \Drupal::logger('civimail_digest')->error($exception->getMessage());
+          \Drupal::messenger()->addError($exception->getMessage());
+        }
+      }
+    }
+    return $result;
   }
 
   /**
@@ -373,22 +420,6 @@ class CiviMailDigest implements CiviMailDigestInterface {
       \Drupal::messenger()->addError($exception->getMessage());
     }
     return $result;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function prepareDigest() {
-    $content = $this->prepareDigestContent();
-    if (!empty($content)) {
-      $digestId = $this->createDigest();
-      if (NULL !== $digestId) {
-        // Store each mailing id with a digest reference.
-        // @todo implement
-
-        // Set then the digest status to 1.
-      }
-    }
   }
 
   /**

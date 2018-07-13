@@ -187,9 +187,12 @@ class DigestController extends ControllerBase {
    *   Redirection the the digest list.
    */
   public function prepare() {
-    \Drupal::messenger()->addStatus($this->t('Checking for content'));
-    $this->civimailDigest->prepareDigest();
-
+    if ($digestId = $this->civimailDigest->prepareDigest()) {
+      \Drupal::messenger()->addStatus($this->t('The digest @id has been prepared.', ['@id' => $digestId]));
+    }
+    else {
+      \Drupal::messenger()->addError($this->t('An error occured while preparing the digest.'));
+    }
     $url = Url::fromRoute('civimail_digest.digest_list');
     return new RedirectResponse($url->toString());
   }
