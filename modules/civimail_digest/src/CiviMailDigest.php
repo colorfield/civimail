@@ -531,20 +531,45 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * {@inheritdoc}
    */
   public function sendDigest($digest_id) {
-    // TODO: Implement sendDigest() method.
-    if ($this->isActive()) {
-      /** @var \Drupal\civimail\CiviMailInterface $civiMail */
-      $civiMail = \Drupal::service('civimail');
-      \Drupal::messenger()->addWarning(t('Send operation not implemented yet.'));
-      // Check first the digest status, only prepared and failed
-      // are allowing a send operation.
-      // If success set the civimail id in the civimail digest table
-      // and set the status to 2.
-    }
-    else {
+    // Check if the digest feature is active.
+    if (!$this->isActive()) {
       // @todo add hints for configuration.
       \Drupal::messenger()->addError(t('CiviMail digest is currently inactive.'));
+      return;
     }
+    // Check the digest status before sending.
+    if (!$this->canSend($digest_id)) {
+      \Drupal::messenger()->addError(t('This digest cannot be sent.'));
+      return;
+    }
+
+    // TODO: Implement sendDigest() method.
+    /** @var \Drupal\civimail\CiviMailInterface $civiMail */
+    $civiMail = \Drupal::service('civimail');
+    \Drupal::messenger()->addWarning(t('Send operation not implemented yet.'));
+
+    // If success set the civimail id in the civimail digest table
+    // and set the status to 2.
+  }
+
+  /**
+   * Checks if a digest can be sent.
+   *
+   * Verifies if the digest has content and if it has not been sent yet.
+   * Only the prepared and failed status are allowing a send operation.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   *
+   * @return bool
+   *   Can the digest be sent.
+   */
+  private function canSend($digest_id) {
+    $query = $this->database->select('civimail_digest', 'cd');
+    $query->condition('cd.id', $digest_id);
+    $query->fields('cd', ['status']);
+    $status = (int) $query->execute()->fetchField();
+    return $status === CiviMailDigestInterface::STATUS_PREPARED ||  $status === CiviMailDigestInterface::STATUS_FAILED;
   }
 
   /**
