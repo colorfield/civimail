@@ -309,6 +309,14 @@ class CiviMailDigest implements CiviMailDigestInterface {
         }
       }
     }
+
+    if ($result) {
+      \Drupal::messenger()->addStatus(t('The digest @id has been prepared.', ['@id' => $digestId]));
+    }
+    else {
+      \Drupal::messenger()->addError(t('An error occured while preparing the digest.'));
+    }
+
     return $result;
   }
 
@@ -458,7 +466,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * @return int
    *   The digest id.
    */
-  public function createDigest() {
+  private function createDigest() {
     $result = NULL;
     try {
       $fields = [
@@ -526,8 +534,15 @@ class CiviMailDigest implements CiviMailDigestInterface {
     if ($this->isActive()) {
       /** @var \Drupal\civimail\CiviMailInterface $civiMail */
       $civiMail = \Drupal::service('civimail');
+      \Drupal::messenger()->addWarning(t('Send operation not implemented yet.'));
+      // Check first the digest status, only prepared and failed
+      // are allowing a send operation.
       // If success set the civimail id in the civimail digest table
       // and set the status to 2.
+    }
+    else {
+      // @todo add hints for configuration.
+      \Drupal::messenger()->addError(t('CiviMail digest is currently inactive.'));
     }
   }
 

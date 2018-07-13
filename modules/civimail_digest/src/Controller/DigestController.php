@@ -221,12 +221,7 @@ class DigestController extends ControllerBase {
    *   Redirection the the digest list.
    */
   public function prepare() {
-    if ($digestId = $this->civimailDigest->prepareDigest()) {
-      \Drupal::messenger()->addStatus($this->t('The digest @id has been prepared.', ['@id' => $digestId]));
-    }
-    else {
-      \Drupal::messenger()->addError($this->t('An error occured while preparing the digest.'));
-    }
+    $this->civimailDigest->prepareDigest();
     $url = Url::fromRoute('civimail_digest.digest_list');
     return new RedirectResponse($url->toString());
   }
@@ -254,8 +249,7 @@ class DigestController extends ControllerBase {
    *   Prepared digest view.
    */
   public function send($digest_id) {
-    // @todo implement
-    \Drupal::messenger()->addWarning($this->t('Send operation not implemented yet.'));
+    $this->civimailDigest->sendDigest($digest_id);
     $url = Url::fromRoute('civimail_digest.digest_list');
     return new RedirectResponse($url->toString());
   }
