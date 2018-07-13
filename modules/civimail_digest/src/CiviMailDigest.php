@@ -118,8 +118,8 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * These candidates are evaluated from CiviMail mailings that were
    * previously sent and from the configured limitations.
    *
-   * @return array
-   *   List of CiviMail mailing ids.
+   * @return \Drupal\Core\Database\StatementInterface|null
+   *   CiviMail mailings and their entity references.
    */
   private function selectDigestMailings() {
     $quantityLimit = $this->digestConfig->get('quantity_limit');
@@ -177,6 +177,8 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * These ones are the mailing that were sent via CiviMail that have
    * been part of a digest.
    *
+   * @todo review implementation because the name implies a query result.
+   *
    * @return array
    *   List of mailing ids.
    */
@@ -191,17 +193,48 @@ class CiviMailDigest implements CiviMailDigestInterface {
   }
 
   /**
+   * Select digest content entities.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   *
+   * @return \Drupal\Core\Database\StatementInterface|null
+   *   Digest content entities.
+   */
+  private function selectDigestEntities($digest_id) {
+    $query = $this->database->select('civimail_digest__mailing', 'cdm');
+    $query->condition('cdm.digest_id', $digest_id);
+    $query->fields('cdm', ['digest_id']);
+    $query->join(
+      'civimail_entity_mailing',
+      'cem',
+      'cem.civicrm_mailing_id = cdm.civicrm_mailing_id');
+    $query->fields('cem', [
+      'entity_type_id',
+      'entity_id',
+    ]);
+    $result = $query->execute();
+    return $result;
+  }
+
+  /**
    * Retrieves the digest content that has been prepared.
    *
    * @param int $digest_id
    *   Digest id.
    *
    * @return array
-   *   List of entity ids for a digest.
+   *   List of entity ids groupe by entity type id.
    */
   private function getDigestContent($digest_id) {
     $result = [];
-    // @todo implement.
+    $queryResult = $this->selectDigestEntities($digest_id);
+    foreach ($queryResult as $row) {
+      if (empty($result[$row->entity_type_id])) {
+        $result[$row->entity_type_id] = [];
+      }
+      $result[$row->entity_type_id][] = $row->entity_id;
+    }
     return $result;
   }
 
@@ -265,7 +298,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
     $digest = [];
     if (!empty($entityIds)) {
       $entities = $this->getDigestEntities($entityIds);
-      $digest = $this->buildDigest($entities);
+      $digest = $this->buildDigest($entities, $digest_id);
     }
     return $this->getDigestAsResponse($digest);
   }
