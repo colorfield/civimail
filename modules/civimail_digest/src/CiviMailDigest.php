@@ -487,9 +487,10 @@ class CiviMailDigest implements CiviMailDigestInterface {
     $civiCrmGroupTools = \Drupal::service('civicrm_tools.group');
     foreach ($queryResult as $row) {
       $result[$row->id] = [
-        'id' => $row->id,
-        'status' => $this->getDigestStatusLabel($row->status),
-        'timestamp' => $row->timestamp,
+        'id' => (int) $row->id,
+        'status_id' => (int) $row->status,
+        'status_label' => $this->getDigestStatusLabel($row->status),
+        'timestamp' => (int) $row->timestamp,
       ];
       // Aggregate groups.
       if (NULL != $row->civicrm_group_id) {

@@ -3,6 +3,7 @@
 namespace Drupal\civimail_digest\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\civimail_digest\CiviMailDigestInterface;
@@ -95,13 +96,13 @@ class DigestController extends ControllerBase {
       $row = [
         'digest_id' => $digest['id'],
         // prepared, failed to be sent, sent.
-        'status' => $digest['status'],
+        'status' => $digest['status_label'],
         // Preparation date.
-        'prepared' => $this->dateFormatter->format((int) $digest['timestamp'], 'short'),
+        'prepared' => $this->dateFormatter->format($digest['timestamp'], 'short'),
         // Preview or view.
-        'view' => '',
+        'view' => $this->getViewLink($digest['id']),
         // Send action or sent date.
-        'send' => '',
+        'send' => $this->getSendLink($digest['id'], $digest['status_id']),
         // CiviCRM groups that received the digest.
         'groups' => empty($groups) ? $this->t('n/a') : implode(',', $digest['groups']),
       ];
@@ -125,6 +126,56 @@ class DigestController extends ControllerBase {
       '#rows' => $this->buildRows(),
       '#empty' => $this->t('No digests were prepared yet.'),
     ];
+  }
+
+  /**
+   * Returns a view link for a digest.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   *
+   * @return string
+   *   Rendered link.
+   */
+  private function getViewLink($digest_id) {
+    $url = Url::fromRoute('civimail_digest.view', ['digest_id' => $digest_id]);
+    $output = Link::fromTextAndUrl($this->t('View'), $url)->toRenderable();
+    return render($output);
+  }
+
+  /**
+   * Returns a send link for a digest.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   * @param int $status_id
+   *   Digest status id.
+   *
+   * @return string
+   *   Rendered link.
+   */
+  private function getSendLink($digest_id, $status_id) {
+    $output = '';
+    switch ($status_id) {
+      case CiviMailDigestInterface::STATUS_PREPARED:
+        $url = Url::fromRoute('civimail_digest.send', ['digest_id' => $digest_id]);
+        $link = Link::fromTextAndUrl($this->t('Send'), $url)->toRenderable();
+        $output = render($link);
+        break;
+
+      case CiviMailDigestInterface::STATUS_SENT:
+        $output = $this->t('Already sent');
+        break;
+
+      case CiviMailDigestInterface::STATUS_CREATED:
+        $output = $this->t('Error - No content');
+        break;
+
+      case CiviMailDigestInterface::STATUS_FAILED:
+        $output = $this->t('Error - Failed to sent');
+        break;
+    }
+    return $output;
   }
 
   /**
@@ -191,6 +242,22 @@ class DigestController extends ControllerBase {
    */
   public function view($digest_id) {
     return $this->civimailDigest->viewDigest($digest_id);
+  }
+
+  /**
+   * Sends a digest that has already been prepared.
+   *
+   * @param int $digest_id
+   *   The digest id.
+   *
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   Prepared digest view.
+   */
+  public function send($digest_id) {
+    // @todo implement
+    \Drupal::messenger()->addWarning($this->t('Send operation not implemented yet.'));
+    $url = Url::fromRoute('civimail_digest.digest_list');
+    return new RedirectResponse($url->toString());
   }
 
   /**

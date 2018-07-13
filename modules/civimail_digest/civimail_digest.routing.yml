@@ -36,7 +36,15 @@ civimail_digest.view:
   path: '/civimail_digest/view/{digest_id}'
   defaults:
     _controller: '\Drupal\civimail_digest\Controller\DigestController::view'
-    _title: 'CiviMail Digest' # @todo title callback with digest title and id.
+    _title: 'View CiviMail Digest' # @todo title callback with digest title and id.
+  requirements:
+    _permission: 'administer civimail'
+
+civimail_digest.send:
+  path: '/civimail_digest/send/{digest_id}'
+  defaults:
+    _controller: '\Drupal\civimail_digest\Controller\DigestController::send'
+    _title: 'Send CiviMail Digest' # @todo title callback with digest title and id.
   requirements:
     _permission: 'administer civimail'
 
