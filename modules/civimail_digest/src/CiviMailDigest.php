@@ -235,6 +235,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
     $query->fields('cg', [
       'civicrm_group_id',
     ]);
+    $query->orderBy('cd.id', 'DESC');
     $result = $query->execute();
     return $result;
   }
