@@ -225,7 +225,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
    */
   private function selectDigests() {
     $query = $this->database->select('civimail_digest', 'cd');
-    $query->fields('cd', ['id', 'status', 'timestamp',]);
+    $query->fields('cd', ['id', 'status', 'timestamp']);
     // leftJoin as groups couldn't be defined yet if
     // the digest status is not 'sent'.
     $query->leftJoin(
@@ -238,7 +238,6 @@ class CiviMailDigest implements CiviMailDigestInterface {
     $result = $query->execute();
     return $result;
   }
-
 
   /**
    * Retrieves the digest content that has been prepared.
@@ -493,8 +492,8 @@ class CiviMailDigest implements CiviMailDigestInterface {
         'timestamp' => $row->timestamp,
       ];
       // Aggregate groups.
-      if(NULL != $row->civicrm_group_id) {
-        if(empty($result[$row->id]['groups'])) {
+      if (NULL != $row->civicrm_group_id) {
+        if (empty($result[$row->id]['groups'])) {
           $result[$row->id]['groups'] = [];
         }
         $group = $civiCrmGroupTools->getGroup($row->civicrm_group_id);
