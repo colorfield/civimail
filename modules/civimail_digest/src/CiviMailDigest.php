@@ -3,6 +3,7 @@
 namespace Drupal\civimail_digest;
 
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
+use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Database\Driver\mysql\Connection;
 use Drupal\civicrm_tools\CiviCrmApiInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -241,6 +242,24 @@ class CiviMailDigest implements CiviMailDigestInterface {
   }
 
   /**
+   * Updates the digest status.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   * @param int $status
+   *   Digest status.
+   *
+   * @return \Drupal\Core\Database\StatementInterface|int|null
+   *   Database update result.
+   */
+  private function updateDigestStatus($digest_id, $status) {
+    return $this->database->update('civimail_digest')
+      ->fields(['status' => $status])
+      ->condition('id', $digest_id)
+      ->execute();
+  }
+
+  /**
    * Retrieves the digest content that has been prepared.
    *
    * @param int $digest_id
@@ -298,10 +317,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
               ->execute();
           }
           // Set then the digest status to prepared.
-          $this->database->update('civimail_digest')
-            ->fields(['status' => CiviMailDigestInterface::STATUS_PREPARED])
-            ->condition('id', $digestId)
-            ->execute();
+          $this->updateDigestStatus($digestId, CiviMailDigestInterface::STATUS_PREPARED);
           $result = $digestId;
         }
         catch (\Exception $exception) {
@@ -533,7 +549,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
   public function sendDigest($digest_id) {
     // Check if the digest feature is active.
     if (!$this->isActive()) {
-      // @todo add hints for configuration.
+      // @todo add hint for digest configuration.
       \Drupal::messenger()->addError(t('CiviMail digest is currently inactive.'));
       return;
     }
@@ -543,13 +559,14 @@ class CiviMailDigest implements CiviMailDigestInterface {
       return;
     }
 
-    // TODO: Implement sendDigest() method.
-    /** @var \Drupal\civimail\CiviMailInterface $civiMail */
-    $civiMail = \Drupal::service('civimail');
-    \Drupal::messenger()->addWarning(t('Send operation not implemented yet.'));
-
-    // If success set the civimail id in the civimail digest table
-    // and set the status to 2.
+    // @todo refactor CiviMail service for delegation.
+    $params = $this->getMailingParams($digest_id);
+    if($this->sendMailing($params)) {
+      $this->updateDigestStatus($digest_id, CiviMailDigestInterface::STATUS_SENT);
+      // @todo add groups in civimail_digest__group, as groups may change in the configuration.
+    }else{
+      $this->updateDigestStatus($digest_id, CiviMailDigestInterface::STATUS_FAILED);
+    }
   }
 
   /**
@@ -570,6 +587,135 @@ class CiviMailDigest implements CiviMailDigestInterface {
     $query->fields('cd', ['status']);
     $status = (int) $query->execute()->fetchField();
     return $status === CiviMailDigestInterface::STATUS_PREPARED ||  $status === CiviMailDigestInterface::STATUS_FAILED;
+  }
+
+  /**
+   * Get CiviMail parameters for CiviCRM Mailing entity save.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   *
+   * @return array
+   *   CiviCRM Mailing parameters.
+   */
+  public function getMailingParams($digest_id) {
+    /** @var \Drupal\civimail\CiviMailInterface $civiMail */
+    $civiMail = \Drupal::service('civimail');
+    $fromCid = $this->digestConfig->get('from_contact');
+    $fromContact = $civiMail->getContact(['contact_id' => $fromCid]);
+    $text = $this->getMailingTemplateText($digest_id);
+    $renderedText = \Drupal::service('renderer')->renderRoot($text);
+    $html = $this->getMailingTemplateHtml($digest_id);
+    $renderedHtml = \Drupal::service('renderer')->renderRoot($html);
+    $subject = Unicode::truncate($this->getDigestTitle() . ' #' . $digest_id, 128, TRUE, TRUE);
+    $result = [
+      'subject' => $subject,
+      // @todo get header and footer / get template from the bundle config
+      'header_id' => '',
+      'footer_id' => '',
+      'body_text' => $renderedText,
+      'body_html' => $renderedHtml,
+      'name' => $subject,
+      'created_id' => $fromContact['contact_id'],
+      // @todo Sent by
+      'from_name'  => $fromContact['sort_name'],
+      'from_email' => $fromContact['email'],
+      'replyto_email'  => $fromContact['email'],
+      // CiviMail removes duplicate contacts among groups.
+      'groups' => [
+        'include' => $this->getDestinationGroups(),
+        'exclude' => [],
+      ],
+      'api.mailing_job.create' => 1,
+      'api.MailingRecipients.get' => [
+        'mailing_id' => '$value.id',
+        'api.contact.getvalue' => [
+          'return' => 'display_name',
+        ],
+        'api.email.getvalue' => [
+          'return' => 'email',
+        ],
+      ],
+    ];
+    return $result;
+  }
+
+  /**
+   * Get destination groups from the configuration.
+   *
+   * @return array
+   *   List of group ids.
+   */
+  private function getDestinationGroups() {
+    $groups = $this->digestConfig->get('to_groups');
+    $result = [];
+    // Get rid of the keys.
+    foreach($groups as $group) {
+      $result[] = $group;
+    }
+    return $result;
+  }
+
+  /**
+   * Returns the the mailing body as plain text wrapped in a mail template.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   *
+   * @return array
+   *   Render array of the text mail template.
+   */
+  private function getMailingTemplateText($digest_id) {
+    // @todo implement
+    return [];
+  }
+
+  /**
+   * Returns the markup for the mailing body wrapped in a mail template.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   *
+   * @return array
+   *   Render array of the html mail template.
+   */
+  private function getMailingTemplateHtml($digest_id) {
+    // @todo implement
+    return [];
+  }
+
+  /**
+   * Schedules and sends a CiviCRM mailing.
+   *
+   * @param array $params
+   *   The mailing parameters.
+   *
+   * @return bool
+   *   The mailing status.
+   */
+  private function sendMailing(array $params) {
+    $result = FALSE;
+    $mailingResult = $this->civicrmToolsApi->save('Mailing', $params);
+    if ($mailingResult['is_error'] === 0) {
+      $result = TRUE;
+      $executeJobUrl = Url::fromUserInput('/civicrm/admin/runjobs?reset=1',
+        ['attributes' => ['target' => '_blank']]);
+      $executeJobLink = Link::fromTextAndUrl(t('Send immediately'), $executeJobUrl);
+      $executeJobLink = $executeJobLink->toRenderable();
+      $executeJobLink = render($executeJobLink);
+      $message = t('CiviMail mailing for <em>@subject</em> scheduled. @execute_job_link.',
+        [
+          '@subject' => $params['subject'],
+          '@execute_job_link' => $executeJobLink,
+        ]
+      );
+      \Drupal::messenger()->addStatus($message);
+    }
+    else {
+      // @todo get exception result
+      \Drupal::messenger()->addError(t('Error while sending the CiviMail digest mailing.'));
+    }
+    return $result;
   }
 
   /**
