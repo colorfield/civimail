@@ -260,6 +260,37 @@ class CiviMailDigest implements CiviMailDigestInterface {
   }
 
   /**
+   * Inserts the sent groups for a digest.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   * @param array $groups
+   *   List of CiviCRM group ids.
+   *
+   * @return bool
+   *   Database insert result
+   */
+  private function insertDigestSentGroups($digest_id, array $groups) {
+    $result = FALSE;
+    try {
+      foreach ($groups as $groupId) {
+        // @todo insert all values in one query.
+        return $this->database->insert('civimail_digest__group')
+          ->fields([
+            'digest_id' => $digest_id,
+            'civicrm_group_id' => $groupId,
+          ])
+          ->execute();
+      }
+      $result = TRUE;
+    }
+    catch (\Exception $exception) {
+      \Drupal::messenger()->addError($exception->getMessage());
+    }
+    return $result;
+  }
+
+  /**
    * Retrieves the digest content that has been prepared.
    *
    * @param int $digest_id
@@ -561,10 +592,11 @@ class CiviMailDigest implements CiviMailDigestInterface {
 
     // @todo refactor CiviMail service for delegation.
     $params = $this->getMailingParams($digest_id);
-    if($this->sendMailing($params)) {
+    if ($this->sendMailing($params)) {
       $this->updateDigestStatus($digest_id, CiviMailDigestInterface::STATUS_SENT);
-      // @todo add groups in civimail_digest__group, as groups may change in the configuration.
-    }else{
+      $this->insertDigestSentGroups($digest_id, $params['groups']['include']);
+    }
+    else {
       $this->updateDigestStatus($digest_id, CiviMailDigestInterface::STATUS_FAILED);
     }
   }
@@ -650,7 +682,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
     $groups = $this->digestConfig->get('to_groups');
     $result = [];
     // Get rid of the keys.
-    foreach($groups as $group) {
+    foreach ($groups as $group) {
       $result[] = $group;
     }
     return $result;
@@ -667,7 +699,12 @@ class CiviMailDigest implements CiviMailDigestInterface {
    */
   private function getMailingTemplateText($digest_id) {
     // @todo implement
-    return [];
+    // Minimal implementation returns the title and url.
+    return [
+      '#theme' => 'civimail_digest_text',
+      '#digest_title' => $this->getDigestTitle(),
+      '#absolute_url' => $this->getAbsoluteDigestUrl($digest_id),
+    ];
   }
 
   /**
@@ -680,8 +717,14 @@ class CiviMailDigest implements CiviMailDigestInterface {
    *   Render array of the html mail template.
    */
   private function getMailingTemplateHtml($digest_id) {
-    // @todo implement
-    return [];
+    // @todo refactor with viewDigest()
+    $entityIds = $this->getDigestContent($digest_id);
+    $digest = [];
+    if (!empty($entityIds)) {
+      $entities = $this->getDigestEntities($entityIds);
+      $digest = $this->buildDigest($entities, $digest_id);
+    }
+    return $digest;
   }
 
   /**
