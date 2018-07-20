@@ -8,6 +8,8 @@ use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 
@@ -203,6 +205,17 @@ class SettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('civimail_digest.settings');
+
+    if ($config->get('is_active')) {
+      $digestListUrl = Url::fromRoute('civimail_digest.digest_list');
+      $digestListLink = Link::fromTextAndUrl($this->t('send an view digests'), $digestListUrl);
+      $digestListLink = $digestListLink->toRenderable();
+      \Drupal::messenger()->addStatus($this->t(
+        'CiviMail Digest is active, you can now @digest_list_link.', [
+          '@digest_list_link' => \Drupal::service('renderer')->renderRoot($digestListLink),
+        ]
+      ));
+    }
 
     $availableGroups = $this->getGroups();
 
