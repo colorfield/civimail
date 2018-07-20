@@ -158,7 +158,7 @@ class SettingsForm extends ConfigFormBase {
     $result = [];
     $contacts = $this->civicrmToolsContact->getFromGroups($groups);
     foreach ($contacts as $key => $contact) {
-      $result[$key] = $contact['first_name'] . ' ' . $contact['last_name'];
+      $result[$key] = $contact['display_name'];
     }
     return $result;
   }
@@ -289,18 +289,20 @@ class SettingsForm extends ConfigFormBase {
     $form['schedule']['week_day'] = [
       '#type' => 'select',
       '#title' => $this->t('Week day'),
-      '#description' => $this->t('Day to send the weekly digest.'),
+      '#description' => $this->t('Day to send the weekly digest. Currently inactive - on this mvp, digests needs to be prepared manually.'),
       '#options' => $this->getWeekDays(),
-      '#required' => TRUE,
       '#default_value' => $config->get('week_day'),
+      // '#required' => TRUE,.
+      '#disabled' => TRUE,
     ];
     $form['schedule']['hour'] = [
       '#type' => 'select',
       '#title' => $this->t('Hour'),
-      '#description' => $this->t('Hour to send the weekly digest.'),
+      '#description' => $this->t('Hour to send the weekly digest. Currently inactive - on this mvp, digests needs to be prepared manually.'),
       '#options' => $this->getHours(),
-      '#required' => TRUE,
       '#default_value' => $config->get('hour'),
+      // '#required' => TRUE,.
+      '#disabled' => TRUE,
     ];
 
     $form['display'] = [
@@ -336,6 +338,7 @@ class SettingsForm extends ConfigFormBase {
       '#required' => TRUE,
       '#default_value' => $config->get('quantity_limit'),
     ];
+    // @todo filter bundles that have been activated for CiviMail
     $form['limit']['bundles'] = [
       '#type' => 'select',
       '#title' => $this->t('Bundles'),
@@ -430,17 +433,18 @@ class SettingsForm extends ConfigFormBase {
     $form['contact']['test_groups'] = [
       '#type' => 'select',
       '#title' => $this->t('Test groups'),
-      '#description' => $this->t('CiviCRM groups that will receive tests.'),
+      '#description' => $this->t('CiviCRM groups that will receive tests. Currently inactive - on this mvp, tests are not implemented yet.'),
       '#options' => $this->getGroups(),
       '#multiple' => TRUE,
       '#default_value' => $config->get('test_groups'),
+      '#disabled' => TRUE,
     ];
 
     // Validation groups and contacts dependent select elements.
     $form['contact']['validation_groups'] = [
       '#type' => 'select',
       '#title' => $this->t('Validation contact groups'),
-      '#description' => $this->t('Set one or multiple groups that will be used to filter the validation contacts.'),
+      '#description' => $this->t('Set one or multiple groups that will be used to filter the validation contacts. Currently inactive - on this mvp, digests needs to be prepared manually.'),
       '#options' => $availableGroups,
       '#default_value' => $validationGroups,
       '#ajax' => [
@@ -450,7 +454,8 @@ class SettingsForm extends ConfigFormBase {
       ],
       // @todo open to multiple groups
       '#multiple' => FALSE,
-      '#required' => TRUE,
+      '#disabled' => TRUE,
+      // '#required' => TRUE,.
     ];
     // JS fallback to trigger a form rebuild.
     $form['contact']['choose_validation_group'] = [
@@ -475,7 +480,8 @@ class SettingsForm extends ConfigFormBase {
       '#options' => $validationContacts,
       '#default_value' => $config->get('validation_contacts'),
       '#multiple' => TRUE,
-      '#required' => TRUE,
+      '#disabled' => TRUE,
+      // '#required' => TRUE,.
     ];
 
     // If no group is selected for a contact give a hint to the user
