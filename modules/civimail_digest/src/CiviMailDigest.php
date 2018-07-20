@@ -3,12 +3,14 @@
 namespace Drupal\civimail_digest;
 
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
+use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Database\Driver\mysql\Connection;
 use Drupal\civicrm_tools\CiviCrmApiInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Link;
+use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -426,13 +428,27 @@ class CiviMailDigest implements CiviMailDigestInterface {
           $viewBuilder = $this->entityTypeManager->getViewBuilder($entityTypeId);
           $view = $viewBuilder->view($entity, $digestViewMode);
           $renderedView = \Drupal::service('renderer')->renderRoot($view);
-          $result[] = $renderedView;
+          $viewWithAbsoluteUrls = $this->absolutizeUrls($renderedView);
+          $result[] = $viewWithAbsoluteUrls;
         }
       }
       catch (InvalidPluginDefinitionException $exception) {
         \Drupal::messenger()->addError($exception->getMessage());
       }
     }
+    return $result;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  private function absolutizeUrls($html) {
+    // @todo port CiviMail absolutizeUrls and replace this private method.
+    $baseUrl = \Drupal::request()->getSchemeAndHttpHost();
+    // Convert the whole message body. Returns string.
+    $markupWithAbsoluteUrls = Html::transformRootRelativeUrlsToAbsolute($html, $baseUrl);
+    // In case you need an instance of Markup class prepare it here.
+    $result = Markup::create($markupWithAbsoluteUrls);
     return $result;
   }
 
@@ -650,7 +666,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
       'name' => $subject,
       'created_id' => $fromContact['contact_id'],
       // @todo Sent by
-      'from_name'  => $fromContact['sort_name'],
+      'from_name'  => $fromContact['display_name'],
       'from_email' => $fromContact['email'],
       'replyto_email'  => $fromContact['email'],
       // CiviMail removes duplicate contacts among groups.
