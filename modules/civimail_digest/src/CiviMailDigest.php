@@ -663,13 +663,13 @@ class CiviMailDigest implements CiviMailDigestInterface {
         'status_label' => $this->getDigestStatusLabel($row->status),
         'timestamp' => (int) $row->timestamp,
       ];
-      // Aggregate groups.
+      // Aggregate groups and set their title.
       if (NULL != $row->civicrm_group_id) {
         if (empty($result[$row->id]['groups'])) {
           $result[$row->id]['groups'] = [];
         }
         $group = $civiCrmGroupTools->getGroup($row->civicrm_group_id);
-        $result[$row->id]['groups'][] = $group['name'];
+        $result[$row->id]['groups'][] = $group['title'];
       }
     }
     return $result;

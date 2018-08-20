@@ -104,7 +104,7 @@ class DigestController extends ControllerBase {
         // Send action or sent date.
         'send' => $this->getSendLink($digest['id'], $digest['status_id']),
         // CiviCRM groups that received the digest.
-        'groups' => empty($groups) ? $this->t('n/a') : implode(',', $digest['groups']),
+        'groups' => empty($digest['groups']) ? $this->t('n/a') : implode(',', $digest['groups']),
       ];
       $result[] = $row;
     }
