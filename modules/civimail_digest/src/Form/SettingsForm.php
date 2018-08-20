@@ -156,9 +156,23 @@ class SettingsForm extends ConfigFormBase {
    */
   private function getContacts(array $groups) {
     $result = [];
-    $contacts = $this->civicrmToolsContact->getFromGroups($groups);
-    foreach ($contacts as $key => $contact) {
-      $result[$key] = $contact['display_name'];
+    // $contacts = $this->civicrmToolsContact->getFromGroups($groups);
+    // foreach ($contacts as $key => $contact) {
+    // $result[$key] = $contact['display_name'];
+    // }.
+
+    // CiviCRM Groups API does not seem to retrieve all the contacts.
+    // Here is a workaround.
+    /** @var \Drupal\civicrm_tools\CiviCrmDatabaseInterface $civiCrmDatabase */
+    $civiCrmDatabase = \Drupal::service('civicrm_tools.database');
+    /** @var \Drupal\civicrm_tools\CiviCrmApiInterface $civiCrmApi */
+    $civiCrmApi = \Drupal::service('civicrm_tools.api');
+    $groupsList = implode(',', $groups);
+    $fromContactsQuery = "SELECT contact_id FROM civicrm_group_contact WHERE status='Added' AND group_id IN (" . $groupsList . ")";
+    $fromResult = $civiCrmDatabase->execute($fromContactsQuery);
+    foreach ($fromResult as $row) {
+      $contact = $civiCrmApi->get('Contact', ['contact_id' => $row->contact_id]);
+      $result[$row->contact_id] = $contact[$row->contact_id]['sort_name'] . ' - ' . $contact[$row->contact_id]['email'];
     }
     return $result;
   }
