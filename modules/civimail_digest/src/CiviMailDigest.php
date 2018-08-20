@@ -376,14 +376,13 @@ class CiviMailDigest implements CiviMailDigestInterface {
     try {
       foreach ($groups as $groupId) {
         // @todo insert all values in one query.
-        return $this->database->insert('civimail_digest__group')
+        $result = $this->database->insert('civimail_digest__group')
           ->fields([
             'digest_id' => $digest_id,
             'civicrm_group_id' => $groupId,
           ])
           ->execute();
       }
-      $result = TRUE;
     }
     catch (\Exception $exception) {
       \Drupal::messenger()->addError($exception->getMessage());
@@ -657,17 +656,18 @@ class CiviMailDigest implements CiviMailDigestInterface {
     /** @var \Drupal\civicrm_tools\CiviCrmGroupInterface $civiCrmGroupTools */
     $civiCrmGroupTools = \Drupal::service('civicrm_tools.group');
     foreach ($queryResult as $row) {
-      $result[$row->id] = [
-        'id' => (int) $row->id,
-        'status_id' => (int) $row->status,
-        'status_label' => $this->getDigestStatusLabel($row->status),
-        'timestamp' => (int) $row->timestamp,
-      ];
-      // Aggregate groups and set their title.
-      if (NULL != $row->civicrm_group_id) {
-        if (empty($result[$row->id]['groups'])) {
-          $result[$row->id]['groups'] = [];
-        }
+      // Aggregate results.
+      if (!array_key_exists($row->id, $result)) {
+        $result[$row->id] = [
+          'id' => (int) $row->id,
+          'status_id' => (int) $row->status,
+          'status_label' => $this->getDigestStatusLabel($row->status),
+          'timestamp' => (int) $row->timestamp,
+          'groups' => [],
+        ];
+      }
+      // Set group title.
+      if (NULL !== $row->civicrm_group_id) {
         $group = $civiCrmGroupTools->getGroup($row->civicrm_group_id);
         $result[$row->id]['groups'][] = $group['title'];
       }
