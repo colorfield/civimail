@@ -8,6 +8,10 @@ use Drupal\Tests\BrowserTestBase;
 /**
  * Simple test to ensure that main page loads with module enabled.
  *
+ * @todo tests coverage: digest configuration limits
+ * mainly the process of selecting content described in
+ * CiviMailDigest::selectDigestMailings.
+ *
  * @group civimail_digest
  */
 class LoadTest extends BrowserTestBase {

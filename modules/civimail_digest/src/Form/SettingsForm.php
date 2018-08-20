@@ -351,7 +351,7 @@ class SettingsForm extends ConfigFormBase {
     $form['limit']['include_update'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Include CiviMail updates'),
-      '#description' => $this->t('If checked, when several mailings have been sent for the same content it will also include the last one, even if the content has already been included in a previous mailing.'),
+      '#description' => $this->t('If checked, when several mailings have been sent for the same entity, it will also include the last per content mailing. So, it will bypass the check of a content that was already sent in a previous digest.'),
       '#default_value' => $config->get('include_update'),
     ];
     $form['limit']['age_in_days'] = [

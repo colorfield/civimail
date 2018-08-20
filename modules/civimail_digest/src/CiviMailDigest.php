@@ -118,17 +118,13 @@ class CiviMailDigest implements CiviMailDigestInterface {
   /**
    * Selects the CiviMail mailings to be included in a digest.
    *
-   * These candidates are evaluated from CiviMail mailings that were
+   * These mailings are evaluated from CiviMail mailings that were
    * previously sent and from the configured limitations.
    *
-   * @return \Drupal\Core\Database\StatementInterface|null
-   *   CiviMail mailings and their entity references.
+   * @return array
+   *   CiviMail mailings rows and their entity references.
    */
-  private function selectDigestMailings() {
-    $quantityLimit = $this->digestConfig->get('quantity_limit');
-    $language = $this->digestConfig->get('language');
-    $includeUpdate = $this->digestConfig->get('include_update');
-
+  public function selectDigestMailings() {
     $configuredBundles = $this->digestConfig->get('bundles');
     $bundles = [];
     // Get rid of the keys, take only values if they are the same.
@@ -138,38 +134,120 @@ class CiviMailDigest implements CiviMailDigestInterface {
       }
     }
 
-    $maxDays = $this->digestConfig->get('age_in_days');
-    // @todo get from system settings
-    $timeZone = new \DateTimeZone('Europe/Brussels');
-    $contentAge = new \DateTime('now -' . $maxDays . ' day', $timeZone);
-
-    // Get the mailings to be excluded.
-    $sentMailings = $this->selectSentDigestMailings();
-
     // Get all the CiviMail mailings for entities that are matching
     // the configuration limitations.
     $query = $this->database->select('civimail_entity_mailing', 'cem')
       ->fields('cem', [
         'entity_id',
         'entity_type_id',
-        'entity_bundle',
-        'langcode',
         'civicrm_mailing_id',
-        'timestamp',
       ]
-      );
-    $query->condition('cem.timestamp', $contentAge->getTimestamp(), '>');
-    // @todo extend to other entity types
-    $query->condition('cem.entity_type_id', 'node');
-    $query->condition('cem.entity_bundle', $bundles, 'IN');
+    );
+    // In all cases, exclude mailings that were already part of a digest.
+    $sentMailings = $this->selectSentDigestMailings();
     if (!empty($sentMailings)) {
       $query->condition('cem.civicrm_mailing_id', $sentMailings, 'NOT IN');
     }
+
+    // Limit by bundle and entity type.
+    // @todo extend to other entity types
+    $query->condition('cem.entity_type_id', 'node');
+    $query->condition('cem.entity_bundle', $bundles, 'IN');
+
+    // Depending on the configuration exclude or not
+    // entities that were part of a previous entity mailing
+    // (some entities could have been sent multiple times).
+    $includeUpdate = $this->digestConfig->get('include_update');
+    // If updates must be excluded, just exclude entities that were
+    // part of any digest.
+    if (!$includeUpdate) {
+      // @todo extend to other entity types
+      $sentEntities = $this->getSentEntities('node', $sentMailings);
+      $query->condition('cem.entity_id', $sentEntities, 'NOT IN');
+      // If updates must be included, always exclude mailing ids for the entity
+      // that are < to the included update.
+      // Otherwise, previous mailing id's can be included on the next digest.
+    }
+    else {
+      // @todo extend to other entity types
+      $lastMailings = $this->getLastMailingIds();
+      $query->condition('cem.civicrm_mailing_id', $lastMailings, 'IN');
+    }
+
+    // Then apply the configured limitations.
+    // Maximum age.
+    $maxDays = $this->digestConfig->get('age_in_days');
+    // @todo get from system settings
+    $timeZone = new \DateTimeZone('Europe/Brussels');
+    $contentAge = new \DateTime('now -' . $maxDays . ' day', $timeZone);
+    $query->condition('cem.timestamp', $contentAge->getTimestamp(), '>');
+    // Language.
+    $language = $this->digestConfig->get('language');
     $query->condition('cem.langcode', $language);
+
+    // Maximum quantity.
+    $quantityLimit = $this->digestConfig->get('quantity_limit');
+    // $query->range(0, $quantityLimit);.
     $query->orderBy('cem.timestamp', 'DESC');
-    $query->range(0, $quantityLimit);
-    $result = $query->execute()->fetchAll();
-    // @todo compare sent entity ids + if updates must be included
+    $queryResult = $query->execute()->fetchAll();
+
+    // At this stage, we can still have the same entity sent in
+    // several mailings, so reduce them to the last mailing per entity.
+    // @todo refactor query with nested query and MAX
+    // then apply query range instead of slice.
+    $result = [];
+    foreach ($queryResult as $row) {
+      if (!array_key_exists($row->entity_type_id . '-' . $row->entity_id, $result)) {
+        $result[$row->entity_type_id . '-' . $row->entity_id] = $row;
+      }
+    }
+
+    $result = array_slice($result, 0, $quantityLimit);
+
+    return $result;
+  }
+
+  /**
+   * Returns entities that were part of an entity mailing included in a digest.
+   *
+   * @param string $entity_type_id
+   *   Entity type id.
+   * @param array $sent_digest_mailings
+   *   Id of entity mailings that were part of a digest.
+   *
+   * @return array
+   *   List of entity ids.
+   */
+  private function getSentEntities($entity_type_id, array $sent_digest_mailings) {
+    $query = $this->database->select('civimail_entity_mailing', 'cem')
+      ->fields('cem', [
+        'entity_id',
+      ]
+      );
+    $query->condition('cem.civicrm_mailing_id', $sent_digest_mailings, 'IN');
+    $query->condition('cem.entity_type_id', $entity_type_id);
+    $query->distinct();
+    $queryResult = $query->execute()->fetchAll();
+    foreach ($queryResult as $row) {
+      $result[] = $row->entity_id;
+    }
+    return $result;
+  }
+
+  /**
+   * Returns the last mailing ids for each entity.
+   *
+   * @return array
+   *   List of mailing ids.
+   */
+  private function getLastMailingIds() {
+    $query = $this->database->select('civimail_entity_mailing', 'cem');
+    $query->groupBy('entity_type_id')->groupBy('entity_id');
+    $query->addExpression('MAX(civicrm_mailing_id)', 'max_mailing_id');
+    $queryResult = $query->execute()->fetchAll();
+    foreach ($queryResult as $row) {
+      $result[] = $row->max_mailing_id;
+    }
     return $result;
   }
 
@@ -216,6 +294,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
       'entity_type_id',
       'entity_id',
     ]);
+    $query->orderBy('cem.timestamp', 'DESC');
     $result = $query->execute();
     return $result;
   }
@@ -334,7 +413,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
     $digestContent = $this->prepareDigestContent();
     if (!empty($digestContent['entities'])) {
       // Get a new digest id.
-      $digestId = $this->createDigest();
+      $digestId = $this->getNewDigestId();
       if (NULL !== $digestId) {
         // Store each mailing id with a reference to the digest id.
         try {
@@ -530,7 +609,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * @return int
    *   The digest id.
    */
-  private function createDigest() {
+  private function getNewDigestId() {
     $result = NULL;
     try {
       $fields = [
