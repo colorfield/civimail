@@ -124,7 +124,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
    * @return array
    *   CiviMail mailings rows and their entity references.
    */
-  public function selectDigestMailings() {
+  private function selectDigestMailings() {
     $configuredBundles = $this->digestConfig->get('bundles');
     $bundles = [];
     // Get rid of the keys, take only values if they are the same.
@@ -336,6 +336,26 @@ class CiviMailDigest implements CiviMailDigestInterface {
   private function updateDigestStatus($digest_id, $status) {
     return $this->database->update('civimail_digest')
       ->fields(['status' => $status])
+      ->condition('id', $digest_id)
+      ->execute();
+  }
+
+  /**
+   * Updates the digest status and mailing id.
+   *
+   * @param int $digest_id
+   *   Digest id.
+   * @param int $status
+   *   Digest status.
+   * @param int $digest_mailing_id
+   *   Digest CiviCRM mailing id.
+   *
+   * @return \Drupal\Core\Database\StatementInterface|int|null
+   *   Database update result.
+   */
+  private function updateDigest($digest_id, $status, $digest_mailing_id) {
+    return $this->database->update('civimail_digest')
+      ->fields(['status' => $status, 'civicrm_mailing_id' => $digest_mailing_id])
       ->condition('id', $digest_id)
       ->execute();
   }
@@ -687,8 +707,9 @@ class CiviMailDigest implements CiviMailDigestInterface {
 
     // @todo refactor CiviMail service for delegation.
     $params = $this->getMailingParams($digest_id);
-    if ($this->sendMailing($params)) {
-      $this->updateDigestStatus($digest_id, CiviMailDigestInterface::STATUS_SENT);
+    $mailingResult = $this->sendMailing($params);
+    if ($mailingResult['is_error'] === 0) {
+      $this->updateDigest($digest_id, CiviMailDigestInterface::STATUS_SENT, $mailingResult['id']);
       $this->insertDigestSentGroups($digest_id, $params['groups']['include']);
     }
     else {
@@ -825,17 +846,17 @@ class CiviMailDigest implements CiviMailDigestInterface {
   /**
    * Schedules and sends a CiviCRM mailing.
    *
+   * As a side effect, displays the status and the send immediately link.
+   *
    * @param array $params
    *   The mailing parameters.
    *
-   * @return bool
-   *   The mailing status.
+   * @return array
+   *   The mailing result.
    */
   private function sendMailing(array $params) {
-    $result = FALSE;
     $mailingResult = $this->civicrmToolsApi->save('Mailing', $params);
     if ($mailingResult['is_error'] === 0) {
-      $result = TRUE;
       $executeJobUrl = Url::fromUserInput('/civicrm/admin/runjobs?reset=1',
         ['attributes' => ['target' => '_blank']]);
       $executeJobLink = Link::fromTextAndUrl(t('Send immediately'), $executeJobUrl);
@@ -853,7 +874,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
       // @todo get exception result
       \Drupal::messenger()->addError(t('Error while sending the CiviMail digest mailing.'));
     }
-    return $result;
+    return $mailingResult;
   }
 
   /**
