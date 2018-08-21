@@ -526,6 +526,8 @@ class CiviMailDigest implements CiviMailDigestInterface {
           $viewBuilder = $this->entityTypeManager->getViewBuilder($entityTypeId);
           $view = $viewBuilder->view($entity, $digestViewMode);
           $renderedView = \Drupal::service('renderer')->renderRoot($view);
+          // @todo security check, review the need of Xss::filter
+          $renderedView = Html::decodeEntities($renderedView);
           $viewWithAbsoluteUrls = $this->absolutizeUrls($renderedView);
           $result[] = $viewWithAbsoluteUrls;
         }

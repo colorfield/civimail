@@ -160,7 +160,6 @@ class SettingsForm extends ConfigFormBase {
     // foreach ($contacts as $key => $contact) {
     // $result[$key] = $contact['display_name'];
     // }.
-
     // CiviCRM Groups API does not seem to retrieve all the contacts.
     // Here is a workaround.
     /** @var \Drupal\civicrm_tools\CiviCrmDatabaseInterface $civiCrmDatabase */
