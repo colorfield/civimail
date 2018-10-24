@@ -73,5 +73,9 @@ function civimail_digest_theme() {
  * Implements hook_cron().
  */
 function civimail_digest_cron() {
-  // @todo implement scheduler
+  /** @var \Drupal\civimail_digest\CiviMailDigestSchedulerInterface $scheduler */
+  $scheduler = \Drupal::service('civimail_digest_scheduler');
+  if (!$scheduler->executeSchedulerOperation()) {
+    \Drupal::logger('civimail_digest')->error(t('CiviMail Digest scheduler failed.'));
+  }
 }
