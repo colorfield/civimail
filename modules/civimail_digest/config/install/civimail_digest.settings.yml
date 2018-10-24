@@ -1,6 +1,5 @@
-civimail_digest:
-  digest_title: "Digest"
-  week_day: 2
-  hour: 8
-  entity_limit: 10
-  age_in_days: 7
+digest_title: "Digest"
+is_active: false
+is_scheduler_active: false
+entity_limit: 10
+age_in_days: 7

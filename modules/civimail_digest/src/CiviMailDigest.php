@@ -82,6 +82,13 @@ class CiviMailDigest implements CiviMailDigestInterface {
   /**
    * {@inheritdoc}
    */
+  public function isSchedulerActive() {
+    return (bool) $this->digestConfig->get('is_scheduler_active');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function hasNextDigestContent() {
     return !empty($this->prepareDigestContent()['entities']);
   }

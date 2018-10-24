@@ -38,6 +38,14 @@ interface CiviMailDigestInterface {
   public function isActive();
 
   /**
+   * Checks if the digest scheduler is configured as active.
+   *
+   * @return bool
+   *   The scheduler configuration status.
+   */
+  public function isSchedulerActive();
+
+  /**
    * Checks if the digest to be prepared has content.
    *
    * @return bool

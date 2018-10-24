@@ -283,39 +283,79 @@ class SettingsForm extends ConfigFormBase {
       '#required' => TRUE,
       '#default_value' => $config->get('digest_title'),
     ];
+    // Is active is currently kept as a simple way to check
+    // that the digest has been configured properly
+    // without having to check anything else.
+    // It is used by CiviMailDigestInterface::isActive() and is
+    // a convenient way to suspend the digest without having to
+    // uninstall the module.
     $form['is_active'] = [
       '#type' => 'checkbox',
-      '#title' => $this->t('Is active'),
-      '#description' => $this->t('When checked, digests of the content that was previously sent via CiviMail will be prepared automatically on the selected day and hour, each week.'),
+      '#title' => $this->t('Is digest active'),
+      '#description' => $this->t('When checked, digests of the contents that were previously sent via CiviMail can be prepared with optional automation.'),
       '#default_value' => $config->get('is_active'),
     ];
 
-    $form['schedule'] = [
+    $form['scheduler'] = [
       '#type' => 'fieldset',
-      '#title' => $this->t('Schedule'),
+      '#title' => $this->t('Scheduler'),
       '#states' => [
         'visible' => [
           ':input[name="is_active"]' => ['checked' => TRUE],
         ],
       ],
     ];
-    $form['schedule']['week_day'] = [
+
+    $form['scheduler']['is_scheduler_active'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Is scheduler active'),
+      '#description' => $this->t('When checked, digests can be scheduled each week.'),
+      '#default_value' => $config->get('is_scheduler_active'),
+    ];
+    $form['scheduler']['scheduler_type'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Scheduler type'),
+      '#description' => $this->t('Prepare and notify validators or prepare and send automatically the digest to the defined groups and time.'),
+      '#options' => ['prepare_notify' => $this->t('Prepare and notify validators'), 'prepare_send' => $this->t('Prepare and send')],
+      '#default_value' => $config->get('scheduler_type'),
+      '#states' => [
+        'visible' => [
+          ':input[name="is_scheduler_active"]' => ['checked' => TRUE],
+        ],
+        'required' => [
+          ':input[name="is_scheduler_active"]' => ['checked' => TRUE],
+        ],
+      ],
+    ];
+    $form['scheduler']['scheduler_week_day'] = [
       '#type' => 'select',
       '#title' => $this->t('Week day'),
-      '#description' => $this->t('Day to send the weekly digest. Currently inactive - on this mvp, digests needs to be prepared manually.'),
+      '#description' => $this->t('Day to notify validators or send the weekly digest.'),
       '#options' => $this->getWeekDays(),
-      '#default_value' => $config->get('week_day'),
-      // '#required' => TRUE,.
-      '#disabled' => TRUE,
+      '#default_value' => $config->get('scheduler_week_day'),
+      '#states' => [
+        'visible' => [
+          ':input[name="is_scheduler_active"]' => ['checked' => TRUE],
+        ],
+        'required' => [
+          ':input[name="is_scheduler_active"]' => ['checked' => TRUE],
+        ],
+      ],
     ];
-    $form['schedule']['hour'] = [
+    $form['scheduler']['scheduler_hour'] = [
       '#type' => 'select',
       '#title' => $this->t('Hour'),
-      '#description' => $this->t('Hour to send the weekly digest. Currently inactive - on this mvp, digests needs to be prepared manually.'),
+      '#description' => $this->t('Hour to notify validators or send the weekly digest.'),
       '#options' => $this->getHours(),
-      '#default_value' => $config->get('hour'),
-      // '#required' => TRUE,.
-      '#disabled' => TRUE,
+      '#default_value' => $config->get('scheduler_hour'),
+      '#states' => [
+        'visible' => [
+          ':input[name="is_scheduler_active"]' => ['checked' => TRUE],
+        ],
+        'required' => [
+          ':input[name="is_scheduler_active"]' => ['checked' => TRUE],
+        ],
+      ],
     ];
 
     $form['display'] = [
@@ -331,7 +371,7 @@ class SettingsForm extends ConfigFormBase {
       '#type' => 'select',
       '#title' => t('Content view mode'),
       '#options' => $viewModes,
-      '#description' => $this->t('View mode that will be used by the digest for each content excerpt.'),
+      '#description' => $this->t('View mode that will be used by the digest for each content excerpt in the mail template.'),
       '#default_value' => $config->get('view_mode'),
     ];
 
@@ -387,7 +427,7 @@ class SettingsForm extends ConfigFormBase {
 
     $form['contact'] = [
       '#type' => 'fieldset',
-      '#title' => $this->t('Contact'),
+      '#title' => $this->t('Contacts'),
       '#states' => [
         'visible' => [
           ':input[name="is_active"]' => ['checked' => TRUE],
@@ -427,7 +467,7 @@ class SettingsForm extends ConfigFormBase {
     ];
     $form['contact']['from_contact_container']['from_contact_fieldset']['from_contact'] = [
       '#type' => 'select',
-      '#title' => $this->t('from contact'),
+      '#title' => $this->t('From contact'),
       '#description' => $this->t('Contact that will be used as the sender.'),
       '#options' => $fromContacts,
       '#default_value' => $config->get('from_contact'),
@@ -446,7 +486,7 @@ class SettingsForm extends ConfigFormBase {
     $form['contact']['test_groups'] = [
       '#type' => 'select',
       '#title' => $this->t('Test groups'),
-      '#description' => $this->t('CiviCRM groups that will receive tests. Currently inactive - on this mvp, tests are not implemented yet.'),
+      '#description' => $this->t('CiviCRM groups that will receive tests. Currently inactive - on this mvp, test digests are not implemented yet.'),
       '#options' => $this->getGroups(),
       '#multiple' => TRUE,
       '#default_value' => $config->get('test_groups'),
@@ -454,10 +494,13 @@ class SettingsForm extends ConfigFormBase {
     ];
 
     // Validation groups and contacts dependent select elements.
+    // @todo if the is_scheduler_active is set to true then back to false
+    // and the scheduler_type remaining configuration is still 'prepare_notify'
+    // the validation groups must be hidden.
     $form['contact']['validation_groups'] = [
       '#type' => 'select',
       '#title' => $this->t('Validation contact groups'),
-      '#description' => $this->t('Set one or multiple groups that will be used to filter the validation contacts. Currently inactive - on this mvp, digests needs to be prepared manually.'),
+      '#description' => $this->t('Set the group that will be used to filter the validation contacts.'),
       '#options' => $availableGroups,
       '#default_value' => $validationGroups,
       '#ajax' => [
@@ -467,8 +510,14 @@ class SettingsForm extends ConfigFormBase {
       ],
       // @todo open to multiple groups
       '#multiple' => FALSE,
-      '#disabled' => TRUE,
-      // '#required' => TRUE,.
+      '#states' => [
+        'visible' => [
+          ':input[name="scheduler_type"]' => ['value' => 'prepare_notify'],
+        ],
+        'required' => [
+          ':input[name="scheduler_type"]' => ['value' => 'prepare_notify'],
+        ],
+      ],
     ];
     // JS fallback to trigger a form rebuild.
     $form['contact']['choose_validation_group'] = [
@@ -481,10 +530,20 @@ class SettingsForm extends ConfigFormBase {
     $form['contact']['validation_contacts_container'] = [
       '#type' => 'container',
       '#attributes' => ['id' => 'validation-contacts-container'],
+      '#states' => [
+        'visible' => [
+          ':input[name="scheduler_type"]' => ['value' => 'prepare_notify'],
+        ],
+      ],
     ];
     $form['contact']['validation_contacts_container']['validation_contacts_fieldset'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Choose at least one contact'),
+      '#states' => [
+        'visible' => [
+          ':input[name="scheduler_type"]' => ['value' => 'prepare_notify'],
+        ],
+      ],
     ];
     $form['contact']['validation_contacts_container']['validation_contacts_fieldset']['validation_contacts'] = [
       '#type' => 'select',
@@ -493,8 +552,11 @@ class SettingsForm extends ConfigFormBase {
       '#options' => $validationContacts,
       '#default_value' => $config->get('validation_contacts'),
       '#multiple' => TRUE,
-      '#disabled' => TRUE,
-      // '#required' => TRUE,.
+      '#states' => [
+        'required' => [
+          ':input[name="scheduler_type"]' => ['value' => 'prepare_notify'],
+        ],
+      ],
     ];
 
     // If no group is selected for a contact give a hint to the user
@@ -522,8 +584,10 @@ class SettingsForm extends ConfigFormBase {
       $this->config('civimail_digest.settings')
         ->set('digest_title', $form_state->getValue('digest_title'))
         ->set('is_active', $form_state->getValue('is_active'))
-        ->set('week_day', $form_state->getValue('week_day'))
-        ->set('hour', $form_state->getValue('hour'))
+        ->set('is_scheduler_active', $form_state->getValue('is_scheduler_active'))
+        ->set('scheduler_type', $form_state->getValue('scheduler_type'))
+        ->set('scheduler_week_day', $form_state->getValue('scheduler_week_day'))
+        ->set('scheduler_hour', $form_state->getValue('scheduler_hour'))
         ->set('view_mode', $form_state->getValue('view_mode'))
         ->set('quantity_limit', $form_state->getValue('quantity_limit'))
         ->set('bundles', $form_state->getValue('bundles'))

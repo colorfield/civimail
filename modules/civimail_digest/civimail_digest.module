@@ -68,3 +68,10 @@ function civimail_digest_theme() {
     ],
   ];
 }
+
+/**
+ * Implements hook_cron().
+ */
+function civimail_digest_cron() {
+  // @todo implement scheduler
+}
