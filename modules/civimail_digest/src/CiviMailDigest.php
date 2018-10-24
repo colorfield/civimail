@@ -469,7 +469,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
       \Drupal::messenger()->addStatus(t('The digest @id has been prepared.', ['@id' => $digestId]));
     }
     else {
-      \Drupal::messenger()->addError(t('An error occured while preparing the digest.'));
+      \Drupal::messenger()->addError(t('An error occured while preparing the digest. You may check if there is content available first, by using the preview.'));
     }
 
     return $result;
