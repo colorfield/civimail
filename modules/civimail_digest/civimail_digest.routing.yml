@@ -1,5 +1,5 @@
 civimail_digest.settings:
-  path: '/admin/config/civimail_digest/settings'
+  path: '/admin/config/civicrm/civimail_digest/settings'
   defaults:
     _form: '\Drupal\civimail_digest\Form\SettingsForm'
     _title: 'CiviMail Digest configuration'
