@@ -4,4 +4,4 @@ services:
     arguments: ['@database', '@civicrm_tools.api', '@entity_type.manager', '@config.factory']
   civimail_digest_scheduler:
     class: Drupal\civimail_digest\CiviMailDigestScheduler
-    arguments: ['@civimail_digest', '@config.factory']
+    arguments: ['@civimail_digest', '@config.factory', '@civicrm_tools.api']

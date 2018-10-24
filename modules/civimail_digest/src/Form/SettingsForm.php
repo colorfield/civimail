@@ -504,7 +504,7 @@ class SettingsForm extends ConfigFormBase {
     // the validation groups must be hidden.
     $form['contact']['validation_groups'] = [
       '#type' => 'select',
-      '#title' => $this->t('Validation contact groups'),
+      '#title' => $this->t('Validation contact group'),
       '#description' => $this->t('Set the group that will be used to filter the validation contacts.'),
       '#options' => $availableGroups,
       '#default_value' => $validationGroups,
