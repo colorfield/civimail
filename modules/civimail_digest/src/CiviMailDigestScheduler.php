@@ -34,6 +34,7 @@ class CiviMailDigestScheduler implements CiviMailDigestSchedulerInterface {
    * Constructs a new CiviMailDigest object.
    */
   public function __construct(CiviMailDigestInterface $civimail_digest, ConfigFactoryInterface $config_factory) {
+    $this->civiMailDigest = $civimail_digest;
     $this->configFactory = $config_factory;
     $this->digestConfig = $this->configFactory->get('civimail_digest.settings');
   }
@@ -66,22 +67,68 @@ class CiviMailDigestScheduler implements CiviMailDigestSchedulerInterface {
   /**
    * Compare the current time to the scheduler configured time.
    *
+   * This needs to be compared with the last sent or prepared digest
+   * to see if the cron is still executed withing the current week.
+   *
    * @return bool
    *   Is the digest time condition met.
    */
   private function isDigestTime() {
-    // @todo implement
-    return FALSE;
+    $result = FALSE;
+    // @todo review DrupalDateTime and timezone
+    // @see https://www.drupal.org/node/1834108
+    $currentDateTime = new \DateTime();
+    // Week day.
+    $currentDay = $currentDateTime->format('w');
+    $configuredDay = $this->digestConfig->get('scheduler_week_day');
+    // Hour without the 0 padding.
+    $currentHour = $currentDateTime->format('G');
+    $configuredHour = $this->digestConfig->get('scheduler_hour');
+
+    // Compare first if the a digest as already been sent or prepared
+    // within the current week.
+    // Depending on the scheduler type,
+    // we need to get the last sent or last prepared digest.
+    $lastDigestTimeStamp = $this->civiMailDigest->getLastDigestTimeStamp();
+    if (!empty($lastDigestTimeStamp)) {
+      $lastSentDigestDateTime = new \DateTime();
+      $lastSentDigestDateTime->setTimestamp($lastDigestTimeStamp);
+      // ISO-8601 week.
+      $lastSentDigestWeek = $lastSentDigestDateTime->format('W');
+      $currentWeek = $currentDateTime->format('W');
+      if ((int) $lastSentDigestWeek === (int) $currentWeek) {
+        // Already sent this week, quit by leaving the result to FALSE.
+        return $result;
+      }
+    }
+
+    // Compare then the current week day and time from the configuration.
+    if (((int) $currentDay >= (int) $configuredDay) && ((int) $currentHour >= (int) $configuredHour)) {
+      drupal_set_message("Is digest time!" . $result);
+      $result = TRUE;
+      return $result;
+    }
+
+    // Otherwise, just leave the initial result to FALSE.
+    drupal_set_message("Is not digest time" . $result);
+    return $result;
   }
 
   /**
    * {@inheritdoc}
    */
   public function executeSchedulerOperation() {
+    $result = FALSE;
     if ($this->canPrepareDigest()) {
       // @todo prepare digest
       // @todo send the digest to groups or send a notification to validators
+      // If the digest does not need to be prepared
+      // it is regarded as a successful scheduler execution.
     }
+    else {
+      $result = TRUE;
+    }
+    return $result;
   }
 
 }

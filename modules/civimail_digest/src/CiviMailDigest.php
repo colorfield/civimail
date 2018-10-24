@@ -94,6 +94,16 @@ class CiviMailDigest implements CiviMailDigestInterface {
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public function getLastDigestTimeStamp() {
+    $query = $this->database->select('civimail_digest', 'cd');
+    $query->condition('status', [self::STATUS_PREPARED, self::STATUS_SENT], 'IN');
+    $query->addExpression('MAX(timestamp)', 'max_timestamp');
+    return $query->execute()->fetchField();
+  }
+
+  /**
    * Get the content entity ids from CiviMail mailings for a digest.
    *
    * Keeping this structure as private as it is not really convenient
@@ -184,7 +194,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
     // Then apply the configured limitations.
     // Maximum age.
     $maxDays = $this->digestConfig->get('age_in_days');
-    // @todo get from system settings
+    // @fixme get from system settings / handle timezone
     $timeZone = new \DateTimeZone('Europe/Brussels');
     $contentAge = new \DateTime('now -' . $maxDays . ' day', $timeZone);
     $query->condition('cem.timestamp', $contentAge->getTimestamp(), '>');

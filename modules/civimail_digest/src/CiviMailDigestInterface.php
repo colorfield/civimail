@@ -54,6 +54,14 @@ interface CiviMailDigestInterface {
   public function hasNextDigestContent();
 
   /**
+   * Returns the last sent or prepared digest timestamp.
+   *
+   * @return int
+   *   The digest timestamp.
+   */
+  public function getLastDigestTimeStamp();
+
+  /**
    * Previews the digest before its preparation.
    *
    * @return \Symfony\Component\HttpFoundation\Response
