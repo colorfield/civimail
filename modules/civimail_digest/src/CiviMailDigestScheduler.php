@@ -104,13 +104,11 @@ class CiviMailDigestScheduler implements CiviMailDigestSchedulerInterface {
 
     // Compare then the current week day and time from the configuration.
     if (((int) $currentDay >= (int) $configuredDay) && ((int) $currentHour >= (int) $configuredHour)) {
-      drupal_set_message("Is digest time!" . $result);
       $result = TRUE;
       return $result;
     }
 
     // Otherwise, just leave the initial result to FALSE.
-    drupal_set_message("Is not digest time" . $result);
     return $result;
   }
 
@@ -120,15 +118,36 @@ class CiviMailDigestScheduler implements CiviMailDigestSchedulerInterface {
   public function executeSchedulerOperation() {
     $result = FALSE;
     if ($this->canPrepareDigest()) {
-      // @todo prepare digest
-      // @todo send the digest to groups or send a notification to validators
-      // If the digest does not need to be prepared
-      // it is regarded as a successful scheduler execution.
+      $digestId = $this->civiMailDigest->prepareDigest();
+      // Send the digest to groups or send a notification to validators
+      // depending on the configuration.
+      $schedulerType = $this->digestConfig->get('scheduler_type');
+      // @todo try catch / throw exception for notifyValidators and sendDigest
+      // so we can assert that the result is TRUE if no exception risen.
+      switch ($schedulerType) {
+        case CiviMailDigestSchedulerInterface::SCHEDULER_NOTIFY:
+          $this->notifyValidators($digestId);
+          break;
+
+        case CiviMailDigestSchedulerInterface::SCHEDULER_SEND:
+          $this->civiMailDigest->sendDigest($digestId);
+          break;
+      }
+      $result = TRUE;
     }
     else {
+      // If the digest does not need to be prepared
+      // it is regarded as a successful scheduler execution.
       $result = TRUE;
     }
     return $result;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function notifyValidators($digest_id) {
+    // TODO: Implement notifyValidators() method.
   }
 
 }

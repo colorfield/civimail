@@ -4,6 +4,7 @@ namespace Drupal\civimail_digest\Form;
 
 use Drupal\civicrm_tools\CiviCrmGroupInterface;
 use Drupal\civicrm_tools\CiviCrmContactInterface;
+use Drupal\civimail_digest\CiviMailDigestSchedulerInterface;
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -316,7 +317,10 @@ class SettingsForm extends ConfigFormBase {
       '#type' => 'radios',
       '#title' => $this->t('Scheduler type'),
       '#description' => $this->t('Prepare and notify validators or prepare and send automatically the digest to the defined groups and time.'),
-      '#options' => ['prepare_notify' => $this->t('Prepare and notify validators'), 'prepare_send' => $this->t('Prepare and send')],
+      '#options' => [
+        CiviMailDigestSchedulerInterface::SCHEDULER_NOTIFY => $this->t('Prepare and notify validators'),
+        CiviMailDigestSchedulerInterface::SCHEDULER_SEND => $this->t('Prepare and send'),
+      ],
       '#default_value' => $config->get('scheduler_type'),
       '#states' => [
         'visible' => [
@@ -495,7 +499,8 @@ class SettingsForm extends ConfigFormBase {
 
     // Validation groups and contacts dependent select elements.
     // @todo if the is_scheduler_active is set to true then back to false
-    // and the scheduler_type remaining configuration is still 'prepare_notify'
+    // and the scheduler_type remaining configuration is still
+    // CiviMailDigestSchedulerInterface::SCHEDULER_NOTIFY
     // the validation groups must be hidden.
     $form['contact']['validation_groups'] = [
       '#type' => 'select',
@@ -512,10 +517,10 @@ class SettingsForm extends ConfigFormBase {
       '#multiple' => FALSE,
       '#states' => [
         'visible' => [
-          ':input[name="scheduler_type"]' => ['value' => 'prepare_notify'],
+          ':input[name="scheduler_type"]' => ['value' => CiviMailDigestSchedulerInterface::SCHEDULER_NOTIFY],
         ],
         'required' => [
-          ':input[name="scheduler_type"]' => ['value' => 'prepare_notify'],
+          ':input[name="scheduler_type"]' => ['value' => CiviMailDigestSchedulerInterface::SCHEDULER_NOTIFY],
         ],
       ],
     ];
@@ -532,7 +537,7 @@ class SettingsForm extends ConfigFormBase {
       '#attributes' => ['id' => 'validation-contacts-container'],
       '#states' => [
         'visible' => [
-          ':input[name="scheduler_type"]' => ['value' => 'prepare_notify'],
+          ':input[name="scheduler_type"]' => ['value' => CiviMailDigestSchedulerInterface::SCHEDULER_NOTIFY],
         ],
       ],
     ];
@@ -541,7 +546,7 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('Choose at least one contact'),
       '#states' => [
         'visible' => [
-          ':input[name="scheduler_type"]' => ['value' => 'prepare_notify'],
+          ':input[name="scheduler_type"]' => ['value' => CiviMailDigestSchedulerInterface::SCHEDULER_NOTIFY],
         ],
       ],
     ];
@@ -554,7 +559,7 @@ class SettingsForm extends ConfigFormBase {
       '#multiple' => TRUE,
       '#states' => [
         'required' => [
-          ':input[name="scheduler_type"]' => ['value' => 'prepare_notify'],
+          ':input[name="scheduler_type"]' => ['value' => CiviMailDigestSchedulerInterface::SCHEDULER_NOTIFY],
         ],
       ],
     ];

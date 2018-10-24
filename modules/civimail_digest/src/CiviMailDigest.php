@@ -697,13 +697,6 @@ class CiviMailDigest implements CiviMailDigestInterface {
   /**
    * {@inheritdoc}
    */
-  public function notifyValidators() {
-    // TODO: Implement notifyValidators() method.
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function sendTestDigest($digest_id) {
     // TODO: Implement sendTestDigest() method.
   }

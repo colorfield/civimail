@@ -8,6 +8,16 @@ namespace Drupal\civimail_digest;
 interface CiviMailDigestSchedulerInterface {
 
   /**
+   * Notify validators after preparation.
+   */
+  const SCHEDULER_NOTIFY = 'prepare_notify';
+
+  /**
+   * Send to groups after preparation.
+   */
+  const SCHEDULER_SEND = 'prepare_send';
+
+  /**
    * Checks if the digest scheduler is configured as active.
    *
    * @return bool
@@ -40,5 +50,13 @@ interface CiviMailDigestSchedulerInterface {
    *   The status of the operation.
    */
   public function executeSchedulerOperation();
+
+  /**
+   * Notifies the validator groups if a new digest is ready.
+   *
+   * @return bool
+   *   Status of the notification.
+   */
+  public function notifyValidators($digest_id);
 
 }

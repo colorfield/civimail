@@ -100,14 +100,6 @@ interface CiviMailDigestInterface {
   public function getDigests();
 
   /**
-   * Notifies the validator groups if a new digest is ready.
-   *
-   * @return bool
-   *   Status of the notification.
-   */
-  public function notifyValidators();
-
-  /**
    * Sends a test digest to the configured test groups.
    *
    * @param int $digest_id
