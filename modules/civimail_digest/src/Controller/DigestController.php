@@ -261,10 +261,12 @@ class DigestController extends ControllerBase {
    *   Return list and actions links for digests.
    */
   public function digestList() {
-    // @todo add hint if the scheduler is active
     // @todo show then configured week day, time, group, scheduler type
     // @todo add hint if the digest as already been sent within the current week
     if ($this->civimailDigest->isActive()) {
+      if ($this->civimailDigest->isSchedulerActive()) {
+        $this->messenger()->addWarning(t('A scheduler is already configured for this digest, so you may probably not want to prepare it manually.'));
+      }
       return [
         'links' => $this->buildActionLinks(),
         'table' => $this->buildDigestTable(),
