@@ -16,7 +16,7 @@ function civimail_digest_help($route_name, RouteMatchInterface $route_match) {
     case 'help.page.civimail_digest':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('Send a digest email from new or updated content previously sent by CiviMail.') . '</p>';
+      $output .= '<p>' . t('Send a digest email from new or updated content previously sent by the CiviMail Drupal module.') . '</p>';
       return $output;
 
     default:
@@ -86,22 +86,16 @@ function civimail_digest_cron() {
 function civimail_digest_mail($key, &$message, $params) {
   switch ($key) {
     case 'civimail_digest_notify':
-      // Customize from mail and name.
-      // Override from related headers, leave others to mime mail.
-      // @todo check if MimeMail is installed
-      $message['headers']['From'] = $params['from_name'] . ' <' . $params['from_mail'] . '>';
-      // Currently overridden by default.
-      $message['headers']['Sender'] = $params['from_mail'];
-      // Currently overridden by default.
-      $message['headers']['Return-Path'] = $params['from_mail'];
-      // Override Drupal related from keys.
-      $message['from'] = $params['from_mail'];
-      // Currently overridden by default.
-      $message['reply-to'] = $params['from_mail'];
-
-      // Set's the message subject and body as configured.
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed; delsp=yes';
       $message['subject'] = $params['subject'];
-      $message['body'][] = $params['body'];
+      $message['body'][] = $params['message'];
+      $message['options'] = [];
+      if (isset($params['options']) && !empty($params['options'])) {
+        foreach ($params['options'] as $key => $value) {
+          $message['options'][$key] = $value;
+        }
+      }
       break;
   }
 }

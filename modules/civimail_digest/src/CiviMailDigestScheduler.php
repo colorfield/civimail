@@ -4,7 +4,6 @@ namespace Drupal\civimail_digest;
 
 use Drupal\civicrm_tools\CiviCrmApiInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Link;
 use Drupal\Core\Url;
 
 /**
@@ -162,33 +161,36 @@ class CiviMailDigestScheduler implements CiviMailDigestSchedulerInterface {
     if (is_array($validationContacts)) {
       $contactIds = array_keys($validationContacts);
       $digestListUrl = Url::fromRoute('civimail_digest.digest_list');
-      $digestListLink = Link::fromTextAndUrl(t('send an view digests'), $digestListUrl);
-      $digestListLink = $digestListLink->toRenderable();
-      $params = [];
-      $params['subject'] = t('Digest @digest_id has been prepared', ['@digest_id' => $digest_id]);
-      // $params['body'] = t('You can view it at the following link:
-      // @digest_link',
-      // ['@digest_link', $digestListLink]);.
+      $digestListUrl->setOption('absolute', TRUE);
+
       $systemConfig = \Drupal::configFactory()->get('system.site');
-      $params['from_mail'] = $systemConfig->get('mail');
-      $params['from_name'] = $systemConfig->get('name');
+      $mailManager = \Drupal::service('plugin.manager.mail');
+      $params = [];
+      $params['subject'] = t('The weekly digest @digest_id has been prepared', ['@digest_id' => $digest_id]);
+      $params['message'] = t('You can now send and view it at the following url: @digest_list_url', ['@digest_list_url' => $digestListUrl->toString()]);
 
       foreach ($contactIds as $contactId) {
-        $contact = $this->civiCrmToolsApi->get('Contact', ['contact_id' => $contactId]);
-
-        $result = \Drupal::service('plugin.manager.mail')->mail(
-          'civimail_digest',
-          'civimail_digest_notify',
-          $contact['email'],
-        // @todo set language from user language id related to contact
-          'en',
-          $params
-        );
-        if ($result) {
-          \Drupal::logger('civimail_digest')->info(t('The digest notification has been sent to @mail.', ['@mail' => $contact['email']]));
-        }
-        else {
-          \Drupal::logger('civimail_digest')->error(t('There has been an error while sending the digest notification to @mail.', ['@mail' => $contact['email']]));
+        $contacts = $this->civiCrmToolsApi->get('Contact', ['contact_id' => $contactId]);
+        if (!empty($contacts)) {
+          reset($contacts);
+          // A single possible match due to the contact_id filter.
+          $contact = $contacts[key($contacts)];
+          $result = $mailManager->mail(
+            'civimail_digest',
+            'civimail_digest_notify',
+            $contact['email'],
+            // @todo set language from user language id related to contact
+            $systemConfig->get('langcode'),
+            $params,
+            NULL,
+            TRUE
+          );
+          if ($result) {
+            \Drupal::logger('civimail_digest')->info(t('The digest notification has been sent to @mail.', ['@mail' => $contact['email']]));
+          }
+          else {
+            \Drupal::logger('civimail_digest')->error(t('There has been an error while sending the digest notification to @mail.', ['@mail' => $contact['email']]));
+          }
         }
       }
     }
