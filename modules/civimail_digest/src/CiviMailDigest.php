@@ -240,7 +240,7 @@ class CiviMailDigest implements CiviMailDigestInterface {
       ->fields('cem', [
         'entity_id',
       ]
-      );
+    );
     $query->condition('cem.civicrm_mailing_id', $sent_digest_mailings, 'IN');
     $query->condition('cem.entity_type_id', $entity_type_id);
     $query->distinct();
@@ -307,6 +307,15 @@ class CiviMailDigest implements CiviMailDigestInterface {
       'civimail_entity_mailing',
       'cem',
       'cem.civicrm_mailing_id = cdm.civicrm_mailing_id');
+    // Check the node status.
+    // @see https://github.com/colorfield/civimail/issues/5
+    // @todo support for other entity types, using entity_type_id
+    $query->join(
+      'node_field_data',
+      'nfd',
+      'nfd.nid = cem.entity_id'
+    );
+    $query->condition('nfd.status', 1);
     $query->fields('cem', [
       'entity_type_id',
       'entity_id',
